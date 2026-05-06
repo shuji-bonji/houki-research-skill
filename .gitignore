@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Local notes / drafts that shouldn't be committed
+/drafts/
+/scratch/
+NOTES.local.md
+
+# Generated plugin artifact (if we package as Cowork .plugin in future)
+*.plugin
