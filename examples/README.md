@@ -11,6 +11,7 @@
 | ファイル | 分野 | 関連 workflow | 状態 |
 |---|---|---|---|
 | [`invoice-registration.md`](invoice-registration.md) | 税務 (インボイス制度・登録番号) | [`../workflows/tax-research.md`](../workflows/tax-research.md) | ✅ |
+| [`error-recovery-patterns.md`](error-recovery-patterns.md) | 横断 (3 MCP のエラー応答→Skill フォールバック) | (横断) | ✅ |
 | `electronic-bookkeeping.md` | 税務 (電子帳簿保存法) | tax-research | 📅 (実利用で追加) |
 | `inheritance-tax-revision.md` | 税務 (相続税法の改正追跡) | tax-research / revision-tracking | 📅 |
 | `working-hours-cap.md` | 労務 (時間外労働の上限規制) | labor-research | 📅 houki-mhlw-mcp 完成後 |

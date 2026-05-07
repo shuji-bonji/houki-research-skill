@@ -114,7 +114,7 @@ sequenceDiagram
 
 ### 鉄則 5: エラー時はフォールバックして citation で注記する
 
-各 MCP は family 共通の `code` 語彙でエラーを返す。LLM はエラーコードをユーザーに直接見せず、[`docs/ERROR-HANDLING.md`](docs/ERROR-HANDLING.md) のフォールバック方針に従って代替経路を試み、citation で「PDF 抽出失敗のため HTML で代替」のように注記する。コード語彙そのものは [`docs/ERROR-CODES.md`](docs/ERROR-CODES.md) を参照。
+各 MCP は family 共通の `code` 語彙でエラーを返す。LLM はエラーコードをユーザーに直接見せず、[`docs/ERROR-HANDLING.md`](docs/ERROR-HANDLING.md) のフォールバック方針に従って代替経路を試み、citation で「PDF 抽出失敗のため HTML で代替」のように注記する。コード語彙そのものは [`docs/ERROR-CODES.md`](docs/ERROR-CODES.md) を、3 MCP 横断の具体的フォールバック例は [`examples/error-recovery-patterns.md`](examples/error-recovery-patterns.md) を参照。
 
 | 典型エラー | 対応 |
 |---|---|
@@ -167,7 +167,8 @@ flowchart TB
 具体的なユースケースは [`workflows/`](workflows/) を参照:
 
 - [`workflows/tax-research.md`](workflows/tax-research.md) — 税務リサーチの基本フロー (法律 × 通達 × 改正)
-- [`examples/invoice-registration.md`](examples/invoice-registration.md) — 「インボイス制度の登録番号」の具体例 (few-shot)
+- [`examples/invoice-registration.md`](examples/invoice-registration.md) — 「インボイス制度の登録番号」の具体例 (happy path)
+- [`examples/error-recovery-patterns.md`](examples/error-recovery-patterns.md) — 3 MCP 横断のエラー応答からの回復パターン (5 シナリオ)
 
 新規ワークフローを追加する場合:
 

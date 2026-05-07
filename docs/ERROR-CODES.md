@@ -65,6 +65,7 @@ interface FamilyErrorContract {
 |---|---|---|---|
 | `INVALID_ARGUMENT` | 引数バリデーション失敗 (Zod 等で弾かれた) | `false` | 全 MCP |
 | `INVALID_ARTICLE_NUM` | 条番号フォーマットが不正 (例: 未対応の漢数字) | `false` | houki-egov-mcp |
+| `OUT_OF_SCOPE` | 別 MCP の管轄リソースが要求された (略称解決の結果、他 MCP の対象と判明) | `false` | 全 MCP |
 
 ### リソース未発見
 
