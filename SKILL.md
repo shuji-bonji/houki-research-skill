@@ -112,6 +112,18 @@ sequenceDiagram
   > pdf-reader-mcp の extract_tables で抽出
 ```
 
+### 鉄則 5: エラー時はフォールバックして citation で注記する
+
+各 MCP は family 共通の `code` 語彙でエラーを返す。LLM はエラーコードをユーザーに直接見せず、[`docs/ERROR-HANDLING.md`](docs/ERROR-HANDLING.md) のフォールバック方針に従って代替経路を試み、citation で「PDF 抽出失敗のため HTML で代替」のように注記する。コード語彙そのものは [`docs/ERROR-CODES.md`](docs/ERROR-CODES.md) を参照。
+
+| 典型エラー | 対応 |
+|---|---|
+| `LAW_NOT_FOUND` / `*_NOT_FOUND` | 略称解決 → 検索 → 目次の順でフォールバック |
+| `SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE` | 最大 2 回まで retry。失敗時は平易に説明 |
+| `SOURCE_RATE_LIMITED` | 当該セッションで同種呼び出しを停止 |
+| `INVALID_PDF` / `ENCRYPTED_PDF` | HTML 版や別添付に切替、citation に注記 |
+| `INVALID_ARGUMENT` | LLM 内部で引数修正、ユーザーに見せない |
+
 ## 利用する MCP ファミリー
 
 ### 現状 (✅ 利用可能)
@@ -175,6 +187,7 @@ flowchart TB
 - 新しい houki-* MCP が family に加わったら、本 SKILL.md の「利用する MCP ファミリー」表を更新する
 - 業法独占規定の境界が判例等で更新されたら [`docs/BUSINESS-LAW.md`](docs/BUSINESS-LAW.md) を更新する
 - `extract_tables` のような新 tool が出たら、PDF 抽出の選択ガイドを更新する
+- 新しいエラー `code` が family のいずれかの MCP に追加されたら [`docs/ERROR-CODES.md`](docs/ERROR-CODES.md) と [`docs/ERROR-HANDLING.md`](docs/ERROR-HANDLING.md) を更新する
 - 典型ワークフロー / 具体例は実利用で蓄積されたパターンを追加していく
 
 ## 関連リンク
