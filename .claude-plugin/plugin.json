@@ -1,0 +1,26 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/.claude-plugin/plugin.schema.json",
+  "name": "houki-research",
+  "version": "0.1.0",
+  "description": "日本の全法規 (法律・政令・通達・判例・裁決・行政解釈) を houki-hub MCP family で横断調査するための Claude Skill。業法独占規定 (税理士法 52 条 / 弁護士法 72 条 / 司法書士法 3 条 / 社労士法 27 条) への注意喚起・citation 標準化・横断オーケストレーション・family 共通エラー契約の正典を担う。",
+  "author": {
+    "name": "shuji-bonji",
+    "email": "bonji@mikuro.jp",
+    "url": "https://github.com/shuji-bonji"
+  },
+  "homepage": "https://github.com/shuji-bonji/houki-research-skill",
+  "repository": "https://github.com/shuji-bonji/houki-research-skill",
+  "license": "MIT",
+  "keywords": [
+    "japan",
+    "law",
+    "tax",
+    "skill",
+    "houki",
+    "egov",
+    "nta",
+    "research",
+    "legal",
+    "tsutatsu"
+  ]
+}
