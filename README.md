@@ -55,31 +55,33 @@ graph TB
 
 ## インストール
 
-4つの経路があります。Cowork mode と Claude Code 両方に対応します。
+クライアントごとに 4 つの経路があります。
 
 ```mermaid
 graph TB
   user[あなた]
-  user --> A["A. 手動 clone<br/>(最小・plugin manager 不要)"]
-  user --> B["B. Cowork に .plugin ファイルを drag&drop<br/>(zip 配布)"]
+  user --> A["A. 手動 clone<br/>(plugin manager 不要)"]
+  user --> B["B. Cowork に .plugin を Upload<br/>(個人ユーザー)"]
   user --> C["C. Claude Code から<br/>/plugin marketplace add"]
-  user --> D["D. Cowork から<br/>marketplace 追加 → install"]
+  user --> D["D. Cowork Enterprise<br/>(組織管理者のみ)"]
 
-  A --> dirA["~/.claude/skills/houki-research/<br/>に直接配置"]
+  A --> dirA["~/.claude/skills/<br/>に直接配置"]
   B --> rel["GitHub Release から<br/>houki-research-X.Y.Z.plugin 取得"]
   C --> mp["shuji-bonji/claude-plugins<br/>(中央 marketplace)"]
   D --> mp
 
   classDef rec fill:#d4edda,stroke:#28a745
-  class C,D rec
+  classDef ent fill:#e2e3e5,stroke:#6c757d
+  class B,C rec
+  class D ent
 ```
 
 | 経路 | 対象 | 手間 | 推奨度 |
 |---|---|---|---|
 | A. 手動 clone | Claude Code | 小 | 動作確認・編集したい人向け |
-| B. .plugin (zip) drag&drop | Cowork | 最小 | 個別配布・Web からの DL |
-| C. Claude Code marketplace | Claude Code | 最小 | **推奨** |
-| D. Cowork marketplace | Cowork | 最小 | **推奨** |
+| B. .plugin Upload | Cowork (個人) | 最小 | **推奨 (個人 Cowork)** |
+| C. marketplace 経由 | Claude Code | 最小 | **推奨 (Claude Code)** |
+| D. Org marketplace | Cowork Enterprise | 中 | 組織管理者のみ |
 
 ### A. 手動 clone (Claude Code)
 
@@ -92,11 +94,17 @@ git clone https://github.com/shuji-bonji/houki-research-skill houki-research-ski
 
 その後、Claude Code で「houki-research skill を使って」と明示すると skill が起動します。
 
-### B. Cowork に .plugin ファイルを drag&drop
+### B. Cowork (個人ユーザー・推奨)
+
+個人の Cowork ユーザーは marketplace URL の追加 UI を持たないため、`.plugin` ファイルを直接アップロードする方式が標準です。
 
 1. [Releases](https://github.com/shuji-bonji/houki-research-skill/releases) から最新の `houki-research-X.Y.Z.plugin` をダウンロード
-2. Cowork mode の Settings → Customize → Plugins → 「Upload plugin」へ drag&drop
-3. 有効化
+2. Claude Desktop アプリを開き、Cowork タブへ
+3. サイドバーの **Plugins** をクリック
+4. **「Upload plugin」** ボタン (または「+」アイコン) から先ほどの `.plugin` ファイルを選択
+5. 有効化
+
+> アップロードした plugin はあなたのマシンにローカル保存されます。組織で共有したい場合は経路 D を参照。
 
 ### C. Claude Code (marketplace 経由・推奨)
 
@@ -108,11 +116,16 @@ git clone https://github.com/shuji-bonji/houki-research-skill houki-research-ski
 /plugin install houki-research@shuji-bonji
 ```
 
-### D. Cowork (marketplace 経由・推奨)
+### D. Cowork Enterprise (組織管理者向け)
 
-1. Cowork mode の Settings → Customize → Plugins → Marketplace
-2. URL に `https://github.com/shuji-bonji/claude-plugins` を入力して追加
-3. 一覧から **houki-research** を install
+組織で全社員に配布したい場合は、Organization Settings から marketplace URL を登録します。**この機能は Enterprise admin のみ**が利用できます。
+
+1. Organization Settings → Plugins → **「Add plugin」**
+2. Source として **GitHub** を選択
+3. URL に `https://github.com/shuji-bonji/claude-plugins` を入力
+4. 利用許可するチームに per-user provisioning または auto-install を設定
+
+詳細: [Manage Claude Cowork plugins for your organization](https://support.claude.com/en/articles/13837433-manage-claude-cowork-plugins-for-your-organization)
 
 ## 前提となる MCP 群
 
