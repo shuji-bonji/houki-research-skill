@@ -38,19 +38,19 @@ graph TB
   s -.誘導 / 引用整形.-> m
   m -.内蔵.-> l
 
-  classDef s fill:#fff3cd,stroke:#ffc107
-  classDef m fill:#cce5ff,stroke:#0066cc
-  classDef l fill:#d4edda,stroke:#28a745
+  classDef s fill:#fff3cd,stroke:#ffc107,color:#333
+  classDef m fill:#cce5ff,stroke:#0066cc,color:#333
+  classDef l fill:#d4edda,stroke:#28a745,color:#333
   class s1,s2,s3,s4 s
   class m1,m2,m3 m
   class l1 l
 ```
 
-| 層 | 責務 | 配布形態 |
-|---|---|---|
-| Skill 層 | LLM の振る舞いを方向付ける指針 | Markdown ベースの Claude Skill (このリポジトリ) |
-| MCP 層 | 機械的な fetch + parse + 検索 | npm package + MCP server |
-| 共有ライブラリ層 | 略称辞書・カテゴリ定義 | npm package (MCP に内蔵) |
+| 層               | 責務                           | 配布形態                                        |
+| ---------------- | ------------------------------ | ----------------------------------------------- |
+| Skill 層         | LLM の振る舞いを方向付ける指針 | Markdown ベースの Claude Skill (このリポジトリ) |
+| MCP 層           | 機械的な fetch + parse + 検索  | npm package + MCP server                        |
+| 共有ライブラリ層 | 略称辞書・カテゴリ定義         | npm package (MCP に内蔵)                        |
 
 ## なぜ MCP ではなく Skill なのか
 
@@ -71,8 +71,8 @@ flowchart LR
   r3 --> agg
   agg --> ans[階層を明示した回答]
 
-  classDef s fill:#fff3cd,stroke:#ffc107
-  classDef m fill:#cce5ff,stroke:#0066cc
+  classDef s fill:#fff3cd,stroke:#ffc107,color:#333
+  classDef m fill:#cce5ff,stroke:#0066cc,color:#333
   class s,agg s
   class r1,r2,r3 m
 ```
@@ -105,14 +105,14 @@ flowchart LR
 
 このスキルが期待する MCP 側の応答契約 (informal contract) を以下に示す。各 MCP リポジトリの個別仕様に従いつつ、共通の最低保証は次の通り:
 
-| フィールド | 内容 | どの MCP で必須か |
-|---|---|---|
+| フィールド     | 内容                                                                       | どの MCP で必須か              |
+| -------------- | -------------------------------------------------------------------------- | ------------------------------ |
 | `legal_status` | `binds_citizens` / `binds_courts` / `binds_tax_office` 等の Boolean フラグ | houki-nta-mcp / houki-egov-mcp |
-| `freshness` | `staleness` (`fresh` / `stale` / `outdated`) + `oldest_fetched_at` | houki-nta-mcp |
-| `sourceUrl` | 一次情報の URL (取得元の永続リンク) | 全 MCP |
-| `fetched_at` | 取得時刻 (ISO 8601) | 全 MCP |
-| `attachedPdfs` | `kind` / `url` / `sizeKb` 付きの添付 PDF メタ | houki-nta-mcp |
-| `reader_hints` | `kind` 別の pdf-reader-mcp 呼び出し例 | houki-nta-mcp v0.7.2+ |
+| `freshness`    | `staleness` (`fresh` / `stale` / `outdated`) + `oldest_fetched_at`         | houki-nta-mcp                  |
+| `sourceUrl`    | 一次情報の URL (取得元の永続リンク)                                        | 全 MCP                         |
+| `fetched_at`   | 取得時刻 (ISO 8601)                                                        | 全 MCP                         |
+| `attachedPdfs` | `kind` / `url` / `sizeKb` 付きの添付 PDF メタ                              | houki-nta-mcp                  |
+| `reader_hints` | `kind` 別の pdf-reader-mcp 呼び出し例                                      | houki-nta-mcp v0.7.2+          |
 
 これらが揃うことで、Skill 層は「**どの情報をどの順序で引用するか**」を機械的に決められる。
 

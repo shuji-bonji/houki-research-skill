@@ -18,10 +18,10 @@ graph TB
   end
 
   subgraph mcps["MCP 層 — 独自実装"]
-    m1[houki-egov-mcp<br/>src/errors.ts]
-    m2[houki-nta-mcp<br/>独自実装]
-    m3[pdf-reader-mcp<br/>独自実装<br/>(houki-abbreviations 不依存)]
-    m4[houki-mhlw-mcp<br/>(計画中)]
+    m1["houki-egov-mcp<br/>src/errors.ts"]
+    m2["houki-nta-mcp<br/>独自実装"]
+    m3["pdf-reader-mcp<br/>独自実装<br/>(houki-abbreviations 不依存)"]
+    m4["houki-mhlw-mcp<br/>(計画中)"]
   end
 
   contract --> m1
@@ -32,9 +32,9 @@ graph TB
   s -.読み取り.-> m2
   s -.読み取り.-> m3
 
-  classDef s fill:#fff3cd,stroke:#ffc107
-  classDef m fill:#cce5ff,stroke:#0066cc
-  classDef c fill:#d4edda,stroke:#28a745
+  classDef s fill:#fff3cd,stroke:#ffc107,color:#333
+  classDef m fill:#cce5ff,stroke:#0066cc,color:#333
+  classDef c fill:#d4edda,stroke:#28a745,color:#333
   class s1,s2 s
   class m1,m2,m3,m4 m
   class c1 c
@@ -45,8 +45,8 @@ graph TB
 ```ts
 // 各 MCP がエラー時に返すべき最低構造
 interface FamilyErrorContract {
-  error: string;       // 1文の人間可読メッセージ (LLM もここを読む)
-  code: string;        // 本ドキュメントの語彙に従う安定コード
+  error: string; // 1文の人間可読メッセージ (LLM もここを読む)
+  code: string; // 本ドキュメントの語彙に従う安定コード
   // 以下は任意だが、揃っているとSkill層の処理が綺麗になる
   hint?: string;
   next_actions?: { action: string; reason: string; example?: object }[];
@@ -61,49 +61,49 @@ interface FamilyErrorContract {
 
 ### 引数・入力 (クライアント責任)
 
-| code | 意味 | retryable | 主な発生 MCP |
-|---|---|---|---|
-| `INVALID_ARGUMENT` | 引数バリデーション失敗 (Zod 等で弾かれた) | `false` | 全 MCP |
-| `INVALID_ARTICLE_NUM` | 条番号フォーマットが不正 (例: 未対応の漢数字) | `false` | houki-egov-mcp |
-| `OUT_OF_SCOPE` | 別 MCP の管轄リソースが要求された (略称解決の結果、他 MCP の対象と判明) | `false` | 全 MCP |
+| code                  | 意味                                                                    | retryable | 主な発生 MCP   |
+| --------------------- | ----------------------------------------------------------------------- | --------- | -------------- |
+| `INVALID_ARGUMENT`    | 引数バリデーション失敗 (Zod 等で弾かれた)                               | `false`   | 全 MCP         |
+| `INVALID_ARTICLE_NUM` | 条番号フォーマットが不正 (例: 未対応の漢数字)                           | `false`   | houki-egov-mcp |
+| `OUT_OF_SCOPE`        | 別 MCP の管轄リソースが要求された (略称解決の結果、他 MCP の対象と判明) | `false`   | 全 MCP         |
 
 ### リソース未発見
 
-| code | 意味 | retryable | 主な発生 MCP |
-|---|---|---|---|
-| `LAW_NOT_FOUND` | 指定された法令が見つからない | `false` | houki-egov-mcp / houki-nta-mcp |
-| `ARTICLE_NOT_FOUND` | 条/項/号が見つからない | `false` | houki-egov-mcp |
-| `ABBREVIATION_NOT_FOUND` | 略称辞書に該当なし | `false` | houki-abbreviations 内蔵側 |
-| `TSUTATSU_NOT_FOUND` | 通達が見つからない | `false` | houki-nta-mcp |
-| `DOC_NOT_FOUND` | 文書 (添付 PDF 含む) が見つからない | `false` | houki-nta-mcp / pdf-reader-mcp |
+| code                     | 意味                                | retryable | 主な発生 MCP                   |
+| ------------------------ | ----------------------------------- | --------- | ------------------------------ |
+| `LAW_NOT_FOUND`          | 指定された法令が見つからない        | `false`   | houki-egov-mcp / houki-nta-mcp |
+| `ARTICLE_NOT_FOUND`      | 条/項/号が見つからない              | `false`   | houki-egov-mcp                 |
+| `ABBREVIATION_NOT_FOUND` | 略称辞書に該当なし                  | `false`   | houki-abbreviations 内蔵側     |
+| `TSUTATSU_NOT_FOUND`     | 通達が見つからない                  | `false`   | houki-nta-mcp                  |
+| `DOC_NOT_FOUND`          | 文書 (添付 PDF 含む) が見つからない | `false`   | houki-nta-mcp / pdf-reader-mcp |
 
 ### 外部ソース由来
 
 家族横断のため、`EGOV_*` のような MCP 固有プレフィックスは避け、`SOURCE_*` で統一する。詳細は `detail.url` で識別する。
 
-| code | 意味 | retryable | 主な発生 MCP |
-|---|---|---|---|
-| `SOURCE_API_ERROR` | 外部 API (e-Gov / NTA / 各省庁) がエラー応答 | 状況による | houki-egov-mcp / houki-nta-mcp |
-| `SOURCE_TIMEOUT` | 外部 API がタイムアウト | `true` | houki-egov-mcp / houki-nta-mcp / pdf-reader-mcp (URL fetch) |
-| `SOURCE_RATE_LIMITED` | 外部 API がレート制限を返した (HTTP 429) | `true` | houki-egov-mcp / houki-nta-mcp |
-| `SOURCE_UNAVAILABLE` | 外部リソースに接続不能 (DNS 失敗・ネットワーク断) | `true` | 全 fetch 系 MCP |
+| code                  | 意味                                              | retryable  | 主な発生 MCP                                                |
+| --------------------- | ------------------------------------------------- | ---------- | ----------------------------------------------------------- |
+| `SOURCE_API_ERROR`    | 外部 API (e-Gov / NTA / 各省庁) がエラー応答      | 状況による | houki-egov-mcp / houki-nta-mcp                              |
+| `SOURCE_TIMEOUT`      | 外部 API がタイムアウト                           | `true`     | houki-egov-mcp / houki-nta-mcp / pdf-reader-mcp (URL fetch) |
+| `SOURCE_RATE_LIMITED` | 外部 API がレート制限を返した (HTTP 429)          | `true`     | houki-egov-mcp / houki-nta-mcp                              |
+| `SOURCE_UNAVAILABLE`  | 外部リソースに接続不能 (DNS 失敗・ネットワーク断) | `true`     | 全 fetch 系 MCP                                             |
 
 > **後方互換**: houki-egov-mcp の既存コード `EGOV_API_ERROR` / `EGOV_TIMEOUT` / `EGOV_RATE_LIMITED` は **`SOURCE_*` のサブセット**として位置づける。Skill 層は両方を解釈できるよう実装する (移行期間)。新規実装は `SOURCE_*` を使うこと。
 
 ### コンテンツ問題 (PDF など)
 
-| code | 意味 | retryable | 主な発生 MCP |
-|---|---|---|---|
-| `INVALID_PDF` | PDF が破損していて読めない | `false` | pdf-reader-mcp |
-| `ENCRYPTED_PDF` | PDF が暗号化されておりパスワードが必要 | `false` | pdf-reader-mcp |
-| `UNSUPPORTED_PDF_FEATURE` | 未対応の PDF 機能 (XFA フォーム等) | `false` | pdf-reader-mcp |
+| code                      | 意味                                   | retryable | 主な発生 MCP   |
+| ------------------------- | -------------------------------------- | --------- | -------------- |
+| `INVALID_PDF`             | PDF が破損していて読めない             | `false`   | pdf-reader-mcp |
+| `ENCRYPTED_PDF`           | PDF が暗号化されておりパスワードが必要 | `false`   | pdf-reader-mcp |
+| `UNSUPPORTED_PDF_FEATURE` | 未対応の PDF 機能 (XFA フォーム等)     | `false`   | pdf-reader-mcp |
 
 ### システム
 
-| code | 意味 | retryable | 主な発生 MCP |
-|---|---|---|---|
-| `UNKNOWN_TOOL` | 存在しない tool 名が呼ばれた | `false` | 全 MCP |
-| `INTERNAL_ERROR` | 内部エラー (バグ・予期せぬ例外) | `false` | 全 MCP |
+| code             | 意味                            | retryable | 主な発生 MCP |
+| ---------------- | ------------------------------- | --------- | ------------ |
+| `UNKNOWN_TOOL`   | 存在しない tool 名が呼ばれた    | `false`   | 全 MCP       |
+| `INTERNAL_ERROR` | 内部エラー (バグ・予期せぬ例外) | `false`   | 全 MCP       |
 
 ## コード命名規則
 

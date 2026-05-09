@@ -35,9 +35,9 @@ graph TB
   skill -->|orchestrate| mcp
   mcp -->|内蔵| lib
 
-  classDef skill fill:#fff3cd,stroke:#ffc107
-  classDef mcp fill:#cce5ff,stroke:#0066cc
-  classDef lib fill:#d4edda,stroke:#28a745
+  classDef skill fill:#fff3cd,stroke:#ffc107,color:#333
+  classDef mcp fill:#cce5ff,stroke:#0066cc,color:#333
+  classDef lib fill:#d4edda,stroke:#28a745,color:#333
   class S1,S2,S3,S4 skill
   class M1,M2,M3 mcp
   class L1 lib
@@ -70,18 +70,18 @@ graph TB
   C --> mp["shuji-bonji/claude-plugins<br/>(中央 marketplace)"]
   D --> mp
 
-  classDef rec fill:#d4edda,stroke:#28a745
-  classDef ent fill:#e2e3e5,stroke:#6c757d
+  classDef rec fill:#d4edda,stroke:#28a745,color:#333
+  classDef ent fill:#e2e3e5,stroke:#6c757d,color:#333
   class B,C rec
   class D ent
 ```
 
-| 経路 | 対象 | 手間 | 推奨度 |
-|---|---|---|---|
-| A. 手動 clone | Claude Code | 小 | 動作確認・編集したい人向け |
-| B. .plugin Upload | Cowork (個人) | 最小 | **推奨 (個人 Cowork)** |
-| C. marketplace 経由 | Claude Code | 最小 | **推奨 (Claude Code)** |
-| D. Org marketplace | Cowork Enterprise | 中 | 組織管理者のみ |
+| 経路                | 対象              | 手間 | 推奨度                     |
+| ------------------- | ----------------- | ---- | -------------------------- |
+| A. 手動 clone       | Claude Code       | 小   | 動作確認・編集したい人向け |
+| B. .plugin Upload   | Cowork (個人)     | 最小 | **推奨 (個人 Cowork)**     |
+| C. marketplace 経由 | Claude Code       | 最小 | **推奨 (Claude Code)**     |
+| D. Org marketplace  | Cowork Enterprise | 中   | 組織管理者のみ             |
 
 ### A. 手動 clone (Claude Code)
 
@@ -131,12 +131,12 @@ git clone https://github.com/shuji-bonji/houki-research-skill houki-research-ski
 
 このスキルは以下が **すべて Claude に登録済み**であることを前提とします。
 
-| MCP / パッケージ | 推奨最小バージョン | npm | リポジトリ |
-|---|---|---|---|
-| `@shuji-bonji/houki-egov-mcp` | v0.2.0 以上 | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-egov-mcp) | [GitHub](https://github.com/shuji-bonji/houki-egov-mcp) |
-| `@shuji-bonji/houki-nta-mcp` | v0.7.0 以上 (PDF 機能を使う場合は v0.8.0 以上推奨) | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-nta-mcp) | [GitHub](https://github.com/shuji-bonji/houki-nta-mcp) |
-| `@shuji-bonji/pdf-reader-mcp` | v0.4.0 以上 | [npm](https://www.npmjs.com/package/@shuji-bonji/pdf-reader-mcp) | [GitHub](https://github.com/shuji-bonji/pdf-reader-mcp) |
-| `@shuji-bonji/houki-abbreviations` | v0.3.0 以上 (各 MCP に内蔵) | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-abbreviations) | [GitHub](https://github.com/shuji-bonji/houki-abbreviations) |
+| MCP / パッケージ                   | 推奨最小バージョン                                 | npm                                                                   | リポジトリ                                                   |
+| ---------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `@shuji-bonji/houki-egov-mcp`      | v0.2.0 以上                                        | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-egov-mcp)      | [GitHub](https://github.com/shuji-bonji/houki-egov-mcp)      |
+| `@shuji-bonji/houki-nta-mcp`       | v0.7.0 以上 (PDF 機能を使う場合は v0.8.0 以上推奨) | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-nta-mcp)       | [GitHub](https://github.com/shuji-bonji/houki-nta-mcp)       |
+| `@shuji-bonji/pdf-reader-mcp`      | v0.4.0 以上                                        | [npm](https://www.npmjs.com/package/@shuji-bonji/pdf-reader-mcp)      | [GitHub](https://github.com/shuji-bonji/pdf-reader-mcp)      |
+| `@shuji-bonji/houki-abbreviations` | v0.3.0 以上 (各 MCP に内蔵)                        | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-abbreviations) | [GitHub](https://github.com/shuji-bonji/houki-abbreviations) |
 
 > 推奨最小バージョンは family 共通エラー契約 (`OUT_OF_SCOPE` 等のコード語彙) と PDF 抽出機能の整合性を担保するための目安です。それ以前のバージョンでも skill 自体は動作しますが、エラーフォールバック例 (`examples/error-recovery-patterns.md`) の挙動が一致しない可能性があります。
 
@@ -184,10 +184,10 @@ MIT — 個人利用・学習用途のフォーク・改変・再配布を自由
 
 ## 関連プロジェクト
 
-| プロジェクト | 役割 |
-|---|---|
+| プロジェクト                                                                | 役割                                                                                  |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | [shuji-bonji/claude-plugins](https://github.com/shuji-bonji/claude-plugins) | shuji-bonji の Claude 拡張全般を集めた marketplace (本 skill もここから install 可能) |
-| [houki-nta-mcp](https://github.com/shuji-bonji/houki-nta-mcp) | 国税庁 (通達・改正・文書回答・QA・タックスアンサー) |
-| [houki-egov-mcp](https://github.com/shuji-bonji/houki-egov-mcp) | e-Gov (法律・政令・省令の本文) |
-| [pdf-reader-mcp](https://github.com/shuji-bonji/pdf-reader-mcp) | PDF 内部構造解析 + 表抽出 |
-| [houki-abbreviations](https://github.com/shuji-bonji/houki-abbreviations) | 法令略称辞書 (共有ライブラリ) |
+| [houki-nta-mcp](https://github.com/shuji-bonji/houki-nta-mcp)               | 国税庁 (通達・改正・文書回答・QA・タックスアンサー)                                   |
+| [houki-egov-mcp](https://github.com/shuji-bonji/houki-egov-mcp)             | e-Gov (法律・政令・省令の本文)                                                        |
+| [pdf-reader-mcp](https://github.com/shuji-bonji/pdf-reader-mcp)             | PDF 内部構造解析 + 表抽出                                                             |
+| [houki-abbreviations](https://github.com/shuji-bonji/houki-abbreviations)   | 法令略称辞書 (共有ライブラリ)                                                         |
