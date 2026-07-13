@@ -13,6 +13,3 @@
 /drafts/
 /scratch/
 NOTES.local.md
-
-# Generated plugin artifact (if we package as Cowork .plugin in future)
-*.plugin
