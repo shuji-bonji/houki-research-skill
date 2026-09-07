@@ -48,7 +48,7 @@ graph TB
 
 | 層               | 責務                           | 配布形態                                        |
 | ---------------- | ------------------------------ | ----------------------------------------------- |
-| Skill 層         | LLM の振る舞いを方向付ける指針 | Markdown ベースの Claude Skill (このリポジトリ) |
+| Skill 層         | LLM の振る舞いを方向付ける指針 | Claude Code plugin (`.claude-plugin/plugin.json` + `skills/houki-research/`)。claude-plugins marketplace から配布 |
 | MCP 層           | 機械的な fetch + parse + 検索  | npm package + MCP server                        |
 | 共有ライブラリ層 | 略称辞書・カテゴリ定義         | npm package (MCP に内蔵)                        |
 
@@ -118,12 +118,14 @@ flowchart LR
 
 ## 配布形態
 
-このリポジトリは **Claude Skill plugin** として配布する想定:
+このリポジトリは **Claude Code plugin** として配布している（v0.1.0 で plugin 化、GitHub Release を自動化済み）:
 
-- リポジトリ root の `SKILL.md` が Claude にロードされるメインプロンプト
+- `.claude-plugin/plugin.json` が plugin の manifest（name = `houki-research`、version はここが正）
+- `skills/houki-research/SKILL.md` が Claude にロードされるメインプロンプト
 - `docs/` / `workflows/` / `examples/` 配下のファイルは SKILL.md からリンクされ、必要に応じて Claude が `Read` で取り込む
+- 配布先は [claude-plugins](https://github.com/shuji-bonji/claude-plugins) marketplace。同じ marketplace に `houki-egov-mcp` / `houki-nta-mcp` の plugin もあり、3 つを揃えて入れられる
 
-将来 Cowork plugin としてパッケージ化する場合、`.plugin` ファイル形式に固める予定。現時点では Claude Code の `~/.claude/skills/` 配下に直接配置する形で利用可能。
+plugin の仕組みが無い環境（Claude Desktop など）では、`skills/houki-research/` をプロジェクトの `.claude/skills/` に置けば同じように動く。
 
 ## 関連設計ドキュメント
 

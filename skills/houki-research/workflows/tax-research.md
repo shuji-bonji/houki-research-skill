@@ -74,9 +74,9 @@ sequenceDiagram
 ```jsonc
 {
   "tool": "resolve_abbreviation",
-  "args": { "name": "消基通" }
+  "args": { "abbr": "消基通" }
 }
-// → { formal: "消費税法基本通達", source_mcp_hint: "nta", ... }
+// → { formal: "消費税法基本通達", source_mcp_hint: "houki-nta", ... }
 ```
 
 `source_mcp_hint` が `"egov"` なら houki-egov-mcp を、`"nta"` なら houki-nta-mcp を主軸にする。
@@ -86,16 +86,29 @@ sequenceDiagram
 法的根拠 (国会制定の法律) を houki-egov-mcp で取得:
 
 ```jsonc
+// 条番号が分かっているとき
+{
+  "tool": "get_law",
+  "args": { "law_name": "消費税法", "article": "57の2" }
+}
+// 法令名は分かるが条が不明なとき → 目次
+{
+  "tool": "get_toc",
+  "args": { "law_name": "消費税法" }
+}
+// 法令名を探すとき（タイトル一致）
 {
   "tool": "search_law",
   "args": { "keyword": "適格請求書発行事業者の登録" }
 }
-// or
+// どの法令の何条か自体が不明なとき → 条文本文の横断検索（ローカル DB が必要）
 {
-  "tool": "get_law",
-  "args": { "lawNumber": "消費税法", "article": "57の2" }
+  "tool": "search_fulltext",
+  "args": { "keyword": "消費税法 適格請求書発行事業者 登録" }
 }
 ```
+
+`search_fulltext` の応答で `source` が `"api-fallback"` なら本文検索は行われていない（`search_law` の結果が `fallback` に入っている）。その場合は `next_actions` の `bulk_download_everything`（`houki-egov-mcp --bulk-download-everything`）をユーザーに案内し、回答には「法令名の一致で探した」と書く。
 
 これが citation の **「法律 (法的根拠)」** セクションになる。
 

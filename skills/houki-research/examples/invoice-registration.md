@@ -17,8 +17,8 @@
 「インボイス」が含まれるので念のため houki-abbreviations 系で確認:
 
 ```jsonc
-{ "tool": "resolve_abbreviation", "args": { "name": "インボイス" } }
-// → { formal: "適格請求書等保存方式", source_mcp_hint: "nta" / "egov" }
+{ "tool": "resolve_abbreviation", "args": { "abbr": "インボイス" } }
+// → { formal: "適格請求書等保存方式", source_mcp_hint: "houki-nta" / "houki-egov" }
 ```
 
 ### ステップ ③: 法律本文を取得 (houki-egov-mcp)
@@ -27,7 +27,7 @@
 { "tool": "search_law", "args": { "keyword": "適格請求書発行事業者の登録" } }
 // → 消費税法 第 57 条の 2
 
-{ "tool": "get_law", "args": { "lawNumber": "消費税法", "article": "57の2" } }
+{ "tool": "get_law", "args": { "law_name": "消費税法", "article": "57の2" } }
 // → 条文本文 + legal_status (binds_citizens=true / binds_courts=true)
 ```
 

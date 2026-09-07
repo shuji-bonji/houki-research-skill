@@ -6,7 +6,7 @@
 
 ## 共通の前提
 
-- 3 MCP すべて v0.6.0+ / 構造化エラーを返す状態
+- houki-egov-mcp 0.5.3+ / houki-nta-mcp 0.10.0+ / pdf-reader-mcp 0.6.0+ で、いずれも構造化エラーを返す状態（2026-09-07 時点の公開版: egov 0.5.3 / nta 0.10.2 / reader 0.15.0）
 - 各レスポンスは `isError: true` + `content[0].text = JSON.stringify(LawServiceError)` の形
 - LLM は `JSON.parse` してから `code` で分岐し、必要なら `next_actions` のヒントを優先採用する
 
@@ -43,7 +43,7 @@ flowchart LR
 
 ```jsonc
 // ① まず素直に呼ぶ
-{ "tool": "get_law", "args": { "lawNumber": "消費税法", "article": "3000" } }
+{ "tool": "get_law", "args": { "law_name": "消費税法", "article": "3000" } }
 ```
 
 `isError: true` で以下が返る:
@@ -75,7 +75,7 @@ flowchart LR
 LLM は目次から「**第 57 条の 2**」が登録番号関連と当たりを付け、改めて取得:
 
 ```jsonc
-{ "tool": "get_law", "args": { "lawNumber": "消費税法", "article": "57の2" } }
+{ "tool": "get_law", "args": { "law_name": "消費税法", "article": "57の2" } }
 // → 条文本文 + legal_status
 ```
 
@@ -259,7 +259,7 @@ houki-nta-mcp 固有の `available_doc_ids` ヒントが付くので、LLM は *
 
 ```jsonc
 // ① 法律本文の取得
-{ "tool": "get_law", "args": { "lawNumber": "消費税法", "article": "57の2" } }
+{ "tool": "get_law", "args": { "law_name": "消費税法", "article": "57の2" } }
 // → OK
 ```
 
@@ -327,32 +327,32 @@ retry も失敗した場合は **法律本文だけで部分回答** + 通達は
 ### MCP 呼び出しの引数
 
 ```jsonc
-// ① 誤って nta に問い合わせ
-{ "tool": "nta_get_tax_answer", "args": { "id": "shohi-57-2" } }
+// ① 誤って nta に問い合わせ（法令名を通達名の引数に渡している）
+{ "tool": "nta_get_tsutatsu", "args": { "name": "消費税法", "clause": "57の2" } }
 ```
 
 ```json
 {
-  "error": "「消費税法 第57条の2」は houki-egov-mcp の管轄です",
+  "error": "\"消費税法\" は houki-egov の管轄です",
   "code": "OUT_OF_SCOPE",
-  "hint": "houki-egov-mcp の get_law を呼んでください",
+  "hint": "houki-egov-mcp で取得してください",
   "next_actions": [
     {
       "action": "delegate_to_mcp",
       "reason": "houki-egov の管轄リソースです。該当 MCP に切り替えてください",
-      "example": { "mcp": "egov" }
+      "example": { "mcp": "houki-egov" }
     }
   ],
-  "resolved": { "formal": "消費税法", "source_mcp_hint": "egov" },
+  "resolved": { "formal": "消費税法", "source_mcp_hint": "houki-egov" },
   "retryable": false
 }
 ```
 
-`code: OUT_OF_SCOPE` + `resolved.source_mcp_hint: "egov"` を確認 → 透過的に切替:
+`code: OUT_OF_SCOPE` + `resolved.source_mcp_hint: "houki-egov"` を確認 → 透過的に切替:
 
 ```jsonc
 // ② 自動で egov にルーティング
-{ "tool": "get_law", "args": { "lawNumber": "消費税法", "article": "57の2" } }
+{ "tool": "get_law", "args": { "law_name": "消費税法", "article": "57の2" } }
 // → 条文本文 + legal_status
 ```
 
@@ -379,7 +379,8 @@ retry も失敗した場合は **法律本文だけで部分回答** + 通達は
 
 | 要素 | houki-egov | houki-nta | pdf-reader |
 |---|---|---|---|
-| 構造化エラー (`isError: true` + JSON `LawServiceError`) | ✅ v0.2.1+ | ✅ Unreleased | ✅ v0.6.0+ |
+| 構造化エラー (`isError: true` + JSON `LawServiceError`) | ✅ v0.2.1+ | ✅ v0.10.0+ (v0.9.5 までは `{ error }` だけで `isError` 無し) | ✅ v0.6.0+ |
+| 引数を `tools/list` の `inputSchema` で検証し `INVALID_ARGUMENT` (`detail.issues[]` 付き) | ✅ v0.5.3+ | ✅ v0.10.0+ | — (未確認) |
 | `code` 語彙が family 共通 | ✅ | ✅ | ✅ |
 | `next_actions` を返す | ✅ | ✅ | ✅ |
 | MCP 固有フィールド (`resolved` / `available_*` / `detail.cause` 等) | — | ✅ (resolved / available_*) | ✅ (detail.cause) |

@@ -87,11 +87,23 @@ sequenceDiagram
     S->>S: ① 業法独占判定
     S->>S: ② 略称解決 (houki-abbreviations)
     S->>E: ③ 法律本文を取得 (法的根拠)
+    Note over S,E: 条番号が分かる → get_law<br/>法令名だけ → search_law → get_law<br/>どの条か不明 → search_fulltext → get_law
     S->>N: ④ 通達による解釈を取得
     S->>N: ⑤ 改正履歴 + 添付 PDF メタを取得
     S->>P: ⑥ extract_tables / split_columns / read_text で PDF 本文
     S-->>U: 階層を明示した citation 付き回答
 ```
+
+法律本文 (③) の入口は 3 つある。**問いに含まれている情報で選ぶ**:
+
+| 分かっていること | 呼ぶ tool | 例 |
+| --- | --- | --- |
+| 法令名 + 条番号 | `get_law` | `{ "law_name": "消費税法", "article": "57の2" }` |
+| 法令名だけ（条は不明） | `get_toc` → `get_law` | 目次で当たりを付けてから本文 |
+| 法令名すら不確か | `search_law` → `get_law` | `{ "keyword": "適格請求書" }` で法令名を探す |
+| 「どの法令の何条に書いてあるか」自体が不明 | `search_fulltext` → `get_law` | `{ "keyword": "民法 不法行為" }` で条文本文を横断検索 |
+
+`search_fulltext` はローカル DB (`houki-egov-mcp --bulk-download-everything` で構築) を引く。DB が無いと応答の `source` が `"api-fallback"` になり、`search_law` の結果が `fallback` に入って返る。このときは **本文検索ができていない**ので、回答で「法令名の一致で探した」と明示し、`next_actions` の `bulk_download_everything` をユーザーに案内する。
 
 ### 鉄則 4: citation は階層を明示する
 
@@ -125,7 +137,7 @@ sequenceDiagram
 | `SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE` | 最大 2 回まで retry。失敗時は平易に説明    |
 | `SOURCE_RATE_LIMITED`                   | 当該セッションで同種呼び出しを停止         |
 | `INVALID_PDF` / `ENCRYPTED_PDF`         | HTML 版や別添付に切替、citation に注記     |
-| `INVALID_ARGUMENT`                      | LLM 内部で引数修正、ユーザーに見せない     |
+| `INVALID_ARGUMENT`                      | `detail.issues[].path` の引数を直して呼び直す。ユーザーに見せない |
 
 ## 利用する MCP ファミリー
 
@@ -134,7 +146,7 @@ sequenceDiagram
 | MCP / パッケージ                   | 役割                                                            | 主な tool                                                               |
 | ---------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `@shuji-bonji/houki-abbreviations` | 略称辞書 (全分野の法令、npm package、各 MCP に内蔵)             | (`resolve_abbreviation` 経由)                                           |
-| `@shuji-bonji/houki-egov-mcp`      | 法律・政令・省令の本文・検索 (全分野)                           | `search_law` / `get_law` 等                                             |
+| `@shuji-bonji/houki-egov-mcp`      | 法律・政令・省令の本文・検索 (全分野)                           | `search_law` / `get_law` / `get_toc` / `search_fulltext` (要ローカル DB) / `get_law_revisions` |
 | `@shuji-bonji/houki-nta-mcp`       | 国税庁の通達・改正・文書回答・QA・タックスアンサー (税務に特化) | `nta_search_*` / `nta_get_*` / `nta_inspect_pdf_meta`                   |
 | `@shuji-bonji/pdf-reader-mcp`      | 添付 PDF 本文抽出 (汎用)                                        | `read_text` (`split_columns` / `compact_whitespace`) / `extract_tables` |
 

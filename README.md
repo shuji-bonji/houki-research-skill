@@ -133,8 +133,8 @@ git clone https://github.com/shuji-bonji/houki-research-skill houki-research-ski
 
 | MCP / パッケージ                   | 推奨最小バージョン                                 | npm                                                                   | リポジトリ                                                   |
 | ---------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `@shuji-bonji/houki-egov-mcp`      | v0.2.0 以上                                        | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-egov-mcp)      | [GitHub](https://github.com/shuji-bonji/houki-egov-mcp)      |
-| `@shuji-bonji/houki-nta-mcp`       | v0.7.0 以上 (PDF 機能を使う場合は v0.8.0 以上推奨) | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-nta-mcp)       | [GitHub](https://github.com/shuji-bonji/houki-nta-mcp)       |
+| `@shuji-bonji/houki-egov-mcp`      | v0.5.3 以上 (`search_fulltext` と `INVALID_ARGUMENT` の `detail.issues` を使うため。v0.2.0 以上なら動作はする) | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-egov-mcp)      | [GitHub](https://github.com/shuji-bonji/houki-egov-mcp)      |
+| `@shuji-bonji/houki-nta-mcp`       | v0.10.0 以上 (エラー応答が `isError: true` 付きの family contract になった版。v0.7.0 以上なら動作はする) | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-nta-mcp)       | [GitHub](https://github.com/shuji-bonji/houki-nta-mcp)       |
 | `@shuji-bonji/pdf-reader-mcp`      | v0.4.0 以上                                        | [npm](https://www.npmjs.com/package/@shuji-bonji/pdf-reader-mcp)      | [GitHub](https://github.com/shuji-bonji/pdf-reader-mcp)      |
 | `@shuji-bonji/houki-abbreviations` | v0.3.0 以上 (各 MCP に内蔵)                        | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-abbreviations) | [GitHub](https://github.com/shuji-bonji/houki-abbreviations) |
 
