@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1] - 2026-09-08
+
+**patch リリース** — SKILL.md の記述の修正だけです。手順・エラー契約・citation 書式は変わりません。
+
+### Fixed
+
+- 鉄則 3 の「法律本文 (③) の入口は 3 つある」を「4 つ」に修正。v0.2.0 で `get_law` / `get_toc` / `search_law` / `search_fulltext` の 4 行の表を足したとき、直前の文が 3 つのままだった（plugin 経由で読み込んだ SKILL.md を確認して発見）
+
 ## [0.2.0] - 2026-09-07
 
 MCP 側の更新（houki-egov-mcp 0.5.3 / houki-nta-mcp 0.10.2）に合わせた追随。Skill の正典（エラーコードの語彙・citation 書式・業法の注意喚起）は変えていない。
