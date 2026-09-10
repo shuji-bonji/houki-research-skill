@@ -5,11 +5,26 @@
 
 `houki-hub` MCP family を **横断的に**使うときの行動指針を Claude に与える **Claude Skill**。日本の **全法規 (法律・政令・省令・通達・判例・裁決・行政解釈)** を、「法律 → 政令 → 省令 → 通達 → 改正 + 添付 PDF → 行政解釈 → 判例 → 裁決」の階層に**正しい順序で参照しながら**回答するためのオーケストレーション層。
 
+> [!NOTE]
 > **スコープ**: 税務 (税理士法) に限らず、**労務 (社労士法)・登記 (司法書士法)・法律事務全般 (弁護士法)** など分野を問わず日本の法令を扱う。現状は family の MCP が `houki-egov-mcp` (法律本文) + `houki-nta-mcp` (税務通達) + `pdf-reader-mcp` (PDF 抽出) なので税務の例が多いが、将来 `houki-mhlw-mcp` (厚労省) / `houki-saiketsu-mcp` (裁決) / `houki-court-mcp` (判例) が加わっても本スキルの行動指針は変わらない設計。
 
 ## 何を提供するのか
 
-このリポジトリは **MCP server ではなく Skill** です。`@modelcontextprotocol/sdk` で `npm install` するものではなく、**Claude が複数 MCP を組み合わせて使うときの行動方針を Markdown でまとめたもの**です。
+提供するのは、**Claude が `houki-hub` の MCP を横断して使うときに従う行動方針**です。日本の法令を調べて答えるまでの、呼ぶ順序・出典の書き方・止めどころを Markdown で書いたもので、Claude が `SKILL.md` を読んで従います。
+
+決めているのは次の 4 つです。
+
+| 行動方針 | 何を決めているか |
+| --- | --- |
+| ① 業法独占規定への注意喚起 | 個別事案への当てはめに触れたとき、何を返し、何を返さず、誰に案内するか |
+| ② 横断オーケストレーション | どの MCP をどの順で呼ぶか。略称の解決を最初に置き、法律 → 政令・省令 → 通達 → 改正履歴 → 添付 PDF → 判例・裁決 と辿る |
+| ③ citation の標準化 | 出典の書式と、法令・通達・参考情報の拘束力の階層をどう示すか |
+| ④ 業務外利用の境界設定 | 参考調査として答えてよい範囲と、業としての相談にあたる範囲の線引き |
+
+family 共通のエラー語彙 (`OUT_OF_SCOPE` など) とその解釈も、この Skill が正典を持ちます。
+
+> [!NOTE]
+> MCP server ではありません。`houki-egov-mcp` などは別リポジトリで、この Skill が決めるのは **それらを呼ぶ順序と、答えの書き方** です。配布は plugin で、[shuji-bonji/claude-plugins](https://github.com/shuji-bonji/claude-plugins) の marketplace から導入できます (経路は [インストール](#インストール) に 4 つ)。
 
 ```mermaid
 graph TB
@@ -138,6 +153,7 @@ git clone https://github.com/shuji-bonji/houki-research-skill houki-research-ski
 | `@shuji-bonji/pdf-reader-mcp`      | v0.4.0 以上                                        | [npm](https://www.npmjs.com/package/@shuji-bonji/pdf-reader-mcp)      | [GitHub](https://github.com/shuji-bonji/pdf-reader-mcp)      |
 | `@shuji-bonji/houki-abbreviations` | v0.3.0 以上 (各 MCP に内蔵)                        | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-abbreviations) | [GitHub](https://github.com/shuji-bonji/houki-abbreviations) |
 
+> [!NOTE]
 > 推奨最小バージョンは family 共通エラー契約 (`OUT_OF_SCOPE` 等のコード語彙) と PDF 抽出機能の整合性を担保するための目安です。それ以前のバージョンでも skill 自体は動作しますが、エラーフォールバック例 (`examples/error-recovery-patterns.md`) の挙動が一致しない可能性があります。
 
 セットアップの詳細は [houki-nta-mcp の HOUKI-FAMILY-INTEGRATION.md](https://github.com/shuji-bonji/houki-nta-mcp/blob/main/docs/HOUKI-FAMILY-INTEGRATION.md) を参照。
@@ -170,11 +186,20 @@ houki-research-skill/
 
 ## 業法独占への配慮（重要）
 
-このスキルは **「文献調査・情報整理」までを担うツール** であり、**具体的な税務相談・法律事務に直接回答する行為は税理士法第 52 条 / 弁護士法第 72 条 等に抵触する可能性があります**。
+> [!IMPORTANT]
+> このスキルが担うのは **文献調査と情報整理** までです。個別の事案に法令を当てはめて結論を出す行為は、税理士法 52 条・弁護士法 72 条・司法書士法 3 条・社労士法 27 条が定める独占業務にあたることがあります。
 
-各 MCP のレスポンスには `legal_status` フィールドで法的拘束力の階層を明示しています。Claude が回答する際は **これらのフィールドを引用し、「最終的な実務判断は税理士・弁護士・司法書士・社労士などの有資格者へ」という案内を必ず添える運用**が原則です。
+当てはめを求められたときに何を返すかは、**応答型**として固定しています。
 
-何を返し、何を返さないかは応答型として固定しています。条文・通達・裁決の提示、制度の概観と改正履歴、論点の列挙、何が事実認定に依存するかの明示までを返し、結論・可否の判定・金額の確定・書類の文案は返しません。**後者は注意喚起を添えても返しません。**
+| | 内容 |
+| --- | --- |
+| 返すもの | 条文・通達・裁決の提示 (出典付き) / 制度の概観と改正履歴 / 論点の列挙 / 何が事実認定で決まるかの明示 |
+| 返さないもの | 結論 / 可否の判定 / 金額の確定 / 書類の文案 |
+
+> [!WARNING]
+> 「返さないもの」は、注意喚起を添えても返しません。注意喚起は、返してよいものの書き方を定めるものであって、返さないものを返せるようにするものではありません。
+
+各 MCP の応答には `legal_status` があり、法令・通達・参考情報で拘束力が違うことを示します。Claude はこれを引用したうえで、最終的な判断は税理士・弁護士・司法書士・社労士などの有資格者に委ねる旨を添えます。
 
 詳細は [`skills/houki-research/docs/BUSINESS-LAW.md`](skills/houki-research/docs/BUSINESS-LAW.md)。
 
