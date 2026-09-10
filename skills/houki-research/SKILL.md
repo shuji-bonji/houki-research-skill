@@ -65,6 +65,15 @@ graph TB
 
 文献調査・制度の概観・条文の引用・改正履歴の説明は **適法な情報提供の範囲**として実施可能。最終判断は税理士・弁護士・司法書士・社労士などの有資格者の関与が必要であることをユーザーに案内する。
 
+何を返し、何を返さないかは [`docs/BUSINESS-LAW.md` の応答型](docs/BUSINESS-LAW.md#応答型) に固定してある。**回答を書く前にこの表を見る。**
+
+| | 内容 |
+| --- | --- |
+| **返すもの** | 条文・通達・裁決の提示 (citation 付き) / 制度の概観と改正履歴 / 論点の列挙 / 何が事実認定に依存するかの明示 / `legal_status` の階層 |
+| **返さないもの** | 結論 (該当する・しない) / 可否の判定 / 金額・税額の確定 / 書類の起案・文案 / 「おそらく〜でしょう」を含む推測 |
+
+「返さないもの」は注意喚起を添えても返さない。当てはめの基準は条文と通達に書いてあるが、返さない理由は精度ではなく独占規定である。判定の置き場所で言えば、当てはめは **系の外** (有資格者) にある。
+
 ### 鉄則 2: 略称は最初に houki-abbreviations 系で解決する
 
 ユーザーが「**消基通**」「**所基通**」「**インボイス**」のような略称を使った場合、最初に **houki-nta-mcp が内蔵する** `resolve_abbreviation` (または各 MCP 内蔵辞書) で正式名と source_mcp_hint を取得する。これにより:
@@ -208,5 +217,5 @@ flowchart TB
 
 ## 関連リンク
 
-- [`README.md`](README.md) — 人間向け install / 設定ガイド
+- [`README.md`](../../README.md) — 人間向け install / 設定ガイド
 - [houki-nta-mcp の HOUKI-FAMILY-INTEGRATION.md](https://github.com/shuji-bonji/houki-nta-mcp/blob/main/docs/HOUKI-FAMILY-INTEGRATION.md) — MCP 群の install ガイド
