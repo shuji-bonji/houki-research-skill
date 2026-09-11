@@ -43,6 +43,12 @@ sequenceDiagram
         E-->>S: 条文
     end
 
+    opt 質疑応答事例から入った (nta_search_qa → nta_get_qa format: "json")
+        N-->>S: related_laws / related_tsutatsu + next_actions (v0.12.0+)
+        S->>E: ④'' next_actions の get_law (条・項・号入り) で法律本文へ
+        S->>N: ④'' next_actions の nta_get_tsutatsu で通達へ
+    end
+
     S->>N: ⑤ 改正履歴 (kaisei) を検索
     N-->>S: 改正通達一覧 (hasPdf=true 推奨)
 
@@ -169,6 +175,43 @@ houki-nta-mcp v0.11.0 以上では、応答に解釈の対象になる法律と�
 
 引いた条文は citation の「法律 (法的根拠)」「政令 / 省令」に置く。
 
+### ステップ ④'': 質疑応答事例から法律本文と通達へ戻る
+
+質疑応答事例 (`nta_search_qa` → `nta_get_qa`) から入った場合は、【関係法令通達】欄に挙がっている法律と通達へ戻る。質疑応答事例は国税庁の参考資料で、税務署員も拘束しない (`legal_status` の `binds_*` がすべて `false`)。
+
+1. `nta_get_qa` は **`format: "json"` を指定する** (既定の markdown には `related_laws` などが出ない)
+2. `next_actions[].example` をそのまま渡す。通達と違い、条・項・号まで入っている
+3. `next_actions` が付かない参照 (租税条約・「旧」「改正前」の条文・条番号の無い法令・基本通達 4 種以外の通達) は、`related_laws` / `related_tsutatsu` の `raw` を読んで [`SKILL.md`](../SKILL.md) 鉄則 3 の表のとおり扱う
+
+houki-nta-mcp v0.12.0 の応答の抜粋 (2026-09-11、`{ "topic": "shohi", "category": "02", "id": "19", "format": "json" }`):
+
+```jsonc
+{
+  "qa": {
+    "title": "個人事業者が所有するゴルフ会員権の譲渡",
+    "relatedLaws": ["消費税法第2条第1項第8号、消費税法基本通達5-1-1"],
+    "notice": "令和7年8月1日現在の法令・通達等に基づいて作成しています。…",
+    "basisDate": "2025-08-01"
+  },
+  "related_laws": [
+    { "law_name": "消費税法", "article": "2", "paragraph": 1, "item": 8, "raw": "消費税法第2条第1項第8号" }
+  ],
+  "related_tsutatsu": [
+    { "name": "消費税法基本通達", "clause": "5-1-1", "raw": "消費税法基本通達5-1-1" }
+  ],
+  "next_actions": [
+    { "action": "delegate_to_mcp", "example": { "mcp": "houki-egov", "tool": "get_law", "law_name": "消費税法", "article": "2", "paragraph": 1, "item": 8 } },
+    { "action": "nta_get_tsutatsu", "example": { "name": "消費税法基本通達", "clause": "5-1-1" } }
+  ]
+}
+```
+
+枝番号の号 (「法人税法第2条第12号の8」) は、houki-nta-mcp v0.14.0 以上で `item: "12の8"` の文字列になる。`get_law` が文字列の `item` を受け付けるのは houki-egov-mcp v0.6.0 以上。項が 1 つだけの条 (法人税法 2 条など) は `paragraph` なしの `item` でも引ける (houki-egov-mcp v0.6.0 以上)。
+
+citation では、引いた条文を「法律 (法的根拠)」、通達を「行政解釈」、質疑応答事例を「参考情報 (拘束力なし)」に置き、`qa.basisDate` と `qa.notice` の趣旨を注に書く ([`docs/CITATION.md`](../docs/CITATION.md))。
+
+タックスアンサー (`nta_get_tax_answer`) には構造化された根拠法令が無い。本文の「根拠法令等」の節を読み、挙がっている法令を `get_law` で引く。
+
 ### ステップ ⑤: 改正履歴を検索
 
 ```jsonc
@@ -229,6 +272,10 @@ flowchart TB
 
 - ❌ 法律本文を確認せずに通達だけ引用する → 通達は内部文書なので、法的根拠が抜ける
 - ❌ 通達の応答の `next_actions` (`delegate_to_mcp` → houki-egov-mcp の `get_law`) を読まずに回答を終える → 同上。成功時の応答にも付くので、エラーのときだけ見るのでは足りない
+- ❌ 質疑応答事例の回答だけで答える → 参考資料で誰も拘束しない。`next_actions` で法律本文と通達へ戻る
+- ❌ `nta_get_qa` を `format` の既定 (markdown) のまま呼んで、根拠の条文を本文から探す → `format: "json"` の `related_laws` と `next_actions` を使う
+- ❌ `qa.notice` を落とす → 作成時点 (`basisDate`) と「個別の取引では異なる課税関係が生じうる」という断り書きが citation から消える
+- ❌ `nta_search_*` の `DOC_NOT_FOUND` を「該当なし」と答える → その種別の文書がローカル DB に無いだけ。`next_actions` の投入コマンドを案内する (houki-nta-mcp v0.13.0 以上)
 - ❌ 改正前後の差分を `read_text` で読む → カラムが交互連結し改正点が判別不能。`extract_tables` または `split_columns: 2` を使う
 - ❌ `legal_status` の引用を省略する → 通達と法律を同列に扱う citation になる
 - ❌ 「あなたの確定申告では…」と個別判断を返す → 業法独占規定 (税理士法 52 条) に抵触するおそれ

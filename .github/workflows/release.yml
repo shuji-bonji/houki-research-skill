@@ -47,7 +47,7 @@ jobs:
           echo "---contents---"
           unzip -l "$ARTIFACT"
 
-      # 前提 MCP の版は README の表と揃える (README を上げたらここも上げる。v0.2.0 で egov 0.2.0→0.5.3 / nta 0.7.0→0.10.0、v0.4.0 で nta 0.10.0→0.11.0 に更新)
+      # 前提 MCP の版は README の表と揃える (README を上げたらここも上げる。v0.2.0 で egov 0.2.0→0.5.3 / nta 0.7.0→0.10.0、v0.4.0 で nta 0.10.0→0.11.0、v0.5.0 で nta 0.11.0→0.12.0 に更新)
       - name: Generate release notes
         id: notes
         run: |
@@ -67,8 +67,8 @@ jobs:
 
           ### 前提 MCP
 
-          - `@shuji-bonji/houki-egov-mcp` v0.5.3 以上 (`search_fulltext` と `INVALID_ARGUMENT` の `detail.issues` を使うため)
-          - `@shuji-bonji/houki-nta-mcp` v0.11.0 以上 (通達の応答の `base_laws` と `next_actions` で法律本文へ戻る手順を使うため)
+          - `@shuji-bonji/houki-egov-mcp` v0.5.3 以上 (`search_fulltext` と `INVALID_ARGUMENT` の `detail.issues` を使うため。枝番号の号の `item` は v0.6.0 以上)
+          - `@shuji-bonji/houki-nta-mcp` v0.12.0 以上 (質疑応答事例の `related_laws` と `next_actions` で法律本文と通達へ戻る手順を使うため。検索の `DOC_NOT_FOUND` は v0.13.0 以上)
           - `@shuji-bonji/pdf-reader-mcp` v0.4.0 以上
           - `@shuji-bonji/houki-abbreviations` v0.3.0 以上 (各 MCP に内蔵)
 

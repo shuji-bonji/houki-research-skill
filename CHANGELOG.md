@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.0] - 2026-09-12
+
+**minor リリース** — houki-nta-mcp 0.12.0〜0.14.0 への追随。質疑応答事例から、応答の `next_actions` に従って法律本文と通達へ戻る手順を足しました。検索ツールが返す `DOC_NOT_FOUND` (ローカル DB に無い) の扱いも足しました。業法の注意喚起・citation の階層は変わりません。
+
+### 追加
+
+- `SKILL.md` 鉄則 3 の見出しを「通達や質疑応答事例を先に引いたら、法律本文へ戻る」に広げた。`nta_get_qa` (`format: "json"`) の `related_laws` / `related_tsutatsu` / `next_actions` の行を表に足し、質疑応答事例では条・項・号が `example` に入っているので本文から補う手順は要らないこと、`format: "json"` を指定すること、`next_actions` が付かない参照 (租税条約・「旧」「改正前」の条文・条番号の無い法令・基本通達 4 種以外の通達) の扱いを書いた。タックスアンサーは「根拠法令等」の節を読んで `get_law` を引く、とだけ書いた
+- `SKILL.md` 鉄則 5 の表と `docs/ERROR-HANDLING.md` に、検索ツールの `DOC_NOT_FOUND` (と空の DB での `TSUTATSU_NOT_FOUND`) を追加。`next_actions` が `cli_bulk_download` のときはフォールバックせず、「該当なし」と答えず、投入コマンドと DB のパスをユーザーに伝える
+- `workflows/tax-research.md` にステップ ④'' (質疑応答事例から法律本文と通達へ戻る) を追加。シーケンス図、v0.12.0 の応答の実例 (消費税 02/19)、枝番号の号 (`item: "12の8"`、nta v0.14.0 + egov v0.6.0 以上)。アンチパターンに「質疑応答事例の回答だけで答える」「`nta_get_qa` を markdown のまま呼ぶ」「`qa.notice` を落とす」「`DOC_NOT_FOUND` を該当なしと答える」を足した
+- `docs/CITATION.md` の「参考情報 (拘束力なし)」の例に質疑応答事例を足した (`qa.basisDate` と `qa.notice` の趣旨を注に書く)
+- `docs/ARCHITECTURE.md` の応答契約の表に `related_laws` / `related_tsutatsu` / `qa.notice` / `qa.basisDate` を足し、成功時の `next_actions` の行に `nta_get_qa` を加えた
+
+### 更新
+
+- 前提 MCP の houki-nta-mcp を v0.11.0 以上から **v0.12.0 以上** に上げた (`README.md` の表と `.github/workflows/release.yml` のリリースノート)。v0.11.0 以上なら通達の手順は動く。houki-egov-mcp は v0.5.3 以上のまま (枝番号の号の `item` は v0.6.0 以上、と併記)
+
 ## [0.4.0] - 2026-09-11
 
 **minor リリース** — houki-nta-mcp 0.11.0 への追随。通達を引いたあとに、応答の `next_actions` に従って法律本文へ戻る手順を足しました。業法の注意喚起・エラー契約・citation 書式は変わりません。

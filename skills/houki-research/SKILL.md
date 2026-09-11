@@ -114,21 +114,42 @@ sequenceDiagram
 
 `search_fulltext` はローカル DB (`houki-egov-mcp --bulk-download-everything` で構築) を引く。DB が無いと応答の `source` が `"api-fallback"` になり、`search_law` の結果が `fallback` に入って返る。このときは **本文検索ができていない**ので、回答で「法令名の一致で探した」と明示し、`next_actions` の `bulk_download_everything` をユーザーに案内する。
 
-#### 通達を先に引いたら、法律本文へ戻る (houki-nta-mcp v0.11.0 以上)
+#### 通達や質疑応答事例を先に引いたら、法律本文へ戻る (houki-nta-mcp v0.11.0 以上。質疑応答事例は v0.12.0 以上)
 
-問いによっては通達の検索 (④) から入ることがある。通達は国民・裁判所を拘束しないので、**通達だけで回答を終えず、必ず法律本文 (③) へ戻る**。戻り先は houki-nta-mcp の応答に入っている:
+問いによっては通達の検索 (④) や質疑応答事例 (`nta_search_qa` / `nta_get_qa`) から入ることがある。通達は国民・裁判所を拘束しない。質疑応答事例は国税庁の参考資料で、税務署員も拘束しない (`legal_status` の `binds_*` がすべて `false`)。**どちらも、それだけで回答を終えず、必ず法律本文 (③) へ戻る**。戻り先は houki-nta-mcp の応答に入っている:
 
 | 呼んだ tool | 戻り先が入るフィールド | 中身 |
 | --- | --- | --- |
 | `nta_get_tsutatsu` | `base_laws` | その通達が解釈している法律・施行令・施行規則の配列 |
 | `nta_search_tsutatsu` | `base_laws_by_tsutatsu` | 結果に現れた通達ごとの同じ配列 (`hits[].tsutatsu` をキーに引く) |
-| 上の両方 | `next_actions` | `{ "action": "delegate_to_mcp", "example": { "mcp": "houki-egov", "tool": "get_law", "law_name": "…" } }`。**エラーでなくても付く** |
+| `nta_get_qa` (`format: "json"`) | `related_laws` / `related_tsutatsu` | 【関係法令通達】欄を分けたもの。法令は `law_name` / `article` / `paragraph` / `item`、通達は `name` / `clause`。元の文字列は `raw` |
+| 上のすべて | `next_actions` | `{ "action": "delegate_to_mcp", "example": { "mcp": "houki-egov", "tool": "get_law", … } }`。質疑応答事例では `nta_get_tsutatsu` への案内も入る。**エラーでなくても付く** |
+
+通達から戻るとき:
 
 1. `next_actions[].example` をそのまま houki-egov-mcp の `get_law` に渡す (法律名だけが入っている)
 2. 条番号は応答に入っていない。通達の本文にある「法第34条第6項」「令第133条」のような参照を読み、`base_laws` の該当する法令名と `article` / `paragraph` を指定して引き直す。基本通達の本文では「法」は法律、「令」は施行令、「規則」は施行規則を指すのが通例 (正確には各通達の冒頭の用語の定義で確かめる)
 3. 引いた条文を citation の「法律 (法的根拠)」「政令 / 省令」に置き、通達はその下の「行政解釈」に置く
 
-houki-nta-mcp が v0.10.x 以前だとこのフィールドは無い。そのときは通達の本文の参照から法令名を自分で補う。
+質疑応答事例から戻るとき:
+
+1. `nta_get_qa` は `format` の既定が `markdown` で、markdown には `related_laws` などが出ない。**`format: "json"` を指定する**
+2. `next_actions[].example` には条・項・号まで入っているので、そのまま `get_law` / `nta_get_tsutatsu` に渡す。通達と違い、条番号を本文から補う手順は要らない
+3. 枝番号の号 (「法人税法第2条第12号の8」) は `item: "12の8"` の文字列で入る (houki-nta-mcp v0.14.0 以上)。`get_law` が文字列の `item` を受け付けるのは houki-egov-mcp v0.6.0 以上。それより前の egov なら `item` を外して項全体を引き、本文から探す
+4. `next_actions` が付かない参照は、`related_laws` / `related_tsutatsu` の `raw` を読んで次のとおり扱う:
+
+| 参照 | 例 | 扱い |
+| --- | --- | --- |
+| 租税条約 | 「日・ハンガリー租税条約第12条第2項(b)」 | e-Gov では引けない。`raw` を citation に書き、条約の本文は確認していないと明記する |
+| 「旧」「改正前」の条文 | 「旧所得税法第…条」 | `get_law_revisions` で改正の時点を調べ、その前の日付を `get_law` の `at` に渡す。時点が決まらなければ `raw` だけ書く。`qa.basisDate` は質疑応答事例の作成時点で、改正前の時点ではない |
+| 条番号の無い法令 | 「消費税法施行令」だけ | `get_toc` → `get_law` |
+| 基本通達 4 種以外の通達 | 「租税特別措置法関係通達70の6-6」 | `nta_get_tsutatsu` は扱わない。`raw` を citation に書く |
+
+5. 引いた条文を「法律 (法的根拠)」に、通達を「行政解釈」に置き、質疑応答事例はその下の「参考情報 (拘束力なし)」に置く。`qa.notice` (作成時点と、個別の取引では異なる課税関係が生じうるという国税庁の断り書き) を注に残す
+
+タックスアンサー (`nta_get_tax_answer`) には構造化された根拠法令が無い。本文の「根拠法令等」の節を読み、そこに挙がっている法令を `get_law` で引く。
+
+houki-nta-mcp が v0.10.x 以前だと `base_laws` は無く、v0.11.x 以前だと `related_laws` は無い。そのときは本文の参照から法令名を自分で補う。
 
 ### 鉄則 4: citation は階層を明示する
 
@@ -159,6 +180,7 @@ houki-nta-mcp が v0.10.x 以前だとこのフィールドは無い。そのと
 | 典型エラー                              | 対応                                       |
 | --------------------------------------- | ------------------------------------------ |
 | `LAW_NOT_FOUND` / `*_NOT_FOUND`         | 略称解決 → 検索 → 目次の順でフォールバック |
+| `nta_search_*` の `DOC_NOT_FOUND` (`next_actions` が `cli_bulk_download`) | その種別の文書がローカル DB に無い。**「該当なし」と答えない**。フォールバックせず、`next_actions` の投入コマンドをユーザーに案内する (houki-nta-mcp v0.13.0 以上) |
 | `SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE` | 最大 2 回まで retry。失敗時は平易に説明    |
 | `SOURCE_RATE_LIMITED`                   | 当該セッションで同種呼び出しを停止         |
 | `INVALID_PDF` / `ENCRYPTED_PDF`         | HTML 版や別添付に切替、citation に注記     |

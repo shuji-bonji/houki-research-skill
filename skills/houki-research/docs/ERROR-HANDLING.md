@@ -53,6 +53,19 @@ flowchart TB
 | ユーザーに見せるか | 通常は見せない (透過的に正しい MCP に切り替える)                                                   |
 | 例外               | 推奨先 MCP が family にまだ実装されていない場合 (`houki-court-mcp` 等) は、その旨をユーザーに案内  |
 
+### 検索ツールの `DOC_NOT_FOUND` / 空の DB での `TSUTATSU_NOT_FOUND` (ローカル DB に無い)
+
+houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `nta_search_kaisei_tsutatsu` / `nta_search_jimu_unei` / `nta_search_bunshokaitou`。v0.13.0 以上) は、その種別の文書がローカル DB に 1 件も無いとき `DOC_NOT_FOUND` を返す。`nta_search_tsutatsu` は通達が 1 件も無いとき `TSUTATSU_NOT_FOUND` を返す。どちらも `next_actions` の `action` が `cli_bulk_download` になっている。上の「docId が誤っている」ときの `*_NOT_FOUND` とは原因が違う。
+
+| 項目               | 内容                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| 原因               | その種別を投入していない / `--bulk-download-everything` の途中でその種別だけ失敗した / bulk download を実行した環境と MCP サーバーとで DB のパス (`HOUKI_NTA_DB_PATH` / `XDG_CACHE_HOME`) が違う |
+| Skill の振る舞い   | 略称解決・検索でのフォールバックはしない (何度検索しても同じ)。**「該当なし」「国税庁の資料に無い」と答えない**。`next_actions[].example.command` の投入コマンドと、`hint` の DB のパスをユーザーに伝える |
+| ユーザーに見せるか | 見せる (ユーザーの環境で投入が必要なため)                                                             |
+| メッセージ整形例   | 「質疑応答事例がローカル DB に入っていないため、検索できませんでした。`houki-nta-mcp --bulk-download-qa` で投入してください (DB: …/cache.db)」 |
+
+キーワードに合わないだけの 0 件は、エラーではなく `results: []` と、検索した件数を書いた `hint` で返る。こちらは「その語を含む文書は無い」という検索結果として扱ってよい。
+
 ### `ABBREVIATION_NOT_FOUND`
 
 | 項目               | 内容                                                                                         |

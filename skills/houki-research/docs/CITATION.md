@@ -46,6 +46,10 @@
   ([国税庁](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1125.htm))
   > 取得: 2026-05-07T10:23:05+09:00 / `binds_citizens=false`
   > **注**: 国税庁の参考解説資料。法的拘束力なし。
+- 質疑応答事例「個人事業者が所有するゴルフ会員権の譲渡」(消費税 02/19)
+  ([国税庁](https://www.nta.go.jp/law/shitsugi/shohi/02/19.htm))
+  > 取得: 2026-09-11 (JST) / `binds_citizens=false` / `binds_tax_office=false`
+  > **注**: 国税庁の参考資料。令和7年8月1日現在の法令・通達等に基づいて作成 (`qa.basisDate`: 2025-08-01)。個別の取引に当てはめると異なる課税関係が生じうる旨の断り書きがある (`qa.notice`)。根拠は上の「法律」「行政解釈」に挙げた条文と通達 (【関係法令通達】: 消費税法第2条第1項第8号、消費税法基本通達5-1-1)
 ```
 
 ## 階層ラベルと出典の対応表
