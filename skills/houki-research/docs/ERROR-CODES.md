@@ -63,7 +63,7 @@ interface FamilyErrorContract {
 
 | code                  | 意味                                                                    | retryable | 主な発生 MCP   |
 | --------------------- | ----------------------------------------------------------------------- | --------- | -------------- |
-| `INVALID_ARGUMENT`    | 引数が `tools/list` の `inputSchema` に合わない (型・必須・enum)。egov 0.5.3+ / nta 0.10.0+ は `detail.issues[]` に `{ path, message }` を入れて返す | `false`   | 全 MCP         |
+| `INVALID_ARGUMENT`    | 引数が `tools/list` の `inputSchema` に合わない (型・必須・enum)。egov 0.6.0+ / nta 0.14.0+ は inputSchema に無い引数もエラーにする。egov 0.5.3+ / nta 0.10.0+ は `detail.issues[]` に `{ path, message }` を入れて返す (未知の引数は `path` に引数名が読点区切りで並ぶ。例: `"mcp, tool"`) | `false`   | 全 MCP         |
 | `INVALID_ARTICLE_NUM` | 条番号フォーマットが不正 (例: 未対応の漢数字)                           | `false`   | houki-egov-mcp |
 | `OUT_OF_SCOPE`        | 別 MCP の管轄リソースが要求された (略称解決の結果、他 MCP の対象と判明) | `false`   | 全 MCP         |
 

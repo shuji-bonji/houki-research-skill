@@ -125,16 +125,25 @@ sequenceDiagram
 | `nta_get_qa` (`format: "json"`) | `related_laws` / `related_tsutatsu` | 【関係法令通達】欄を分けたもの。法令は `law_name` / `article` / `paragraph` / `item`、通達は `name` / `clause`。元の文字列は `raw` |
 | 上のすべて | `next_actions` | `{ "action": "delegate_to_mcp", "example": { "mcp": "houki-egov", "tool": "get_law", … } }`。質疑応答事例では `nta_get_tsutatsu` への案内も入る。**エラーでなくても付く** |
 
+`example` の読み方に注意する。`mcp` と `tool` は **どの MCP のどの tool を呼ぶか**を示すもので、引数ではない。houki-egov-mcp v0.6.0 以上と houki-nta-mcp v0.14.0 以上は inputSchema に無い引数を `INVALID_ARGUMENT` で返すので、`example` をそのまま渡すと `mcp, tool: inputSchema に無い引数です` になる。**`mcp` と `tool` を除いた残りを引数にする**。
+
+```jsonc
+// nta_get_qa の next_actions[0].example
+{ "mcp": "houki-egov", "tool": "get_law", "law_name": "消費税法", "article": "2", "paragraph": 1, "item": 8 }
+// → houki-egov-mcp の get_law に渡す引数
+{ "law_name": "消費税法", "article": "2", "paragraph": 1, "item": 8 }
+```
+
 通達から戻るとき:
 
-1. `next_actions[].example` をそのまま houki-egov-mcp の `get_law` に渡す (法律名だけが入っている)
+1. `next_actions[].example` から `mcp` と `tool` を除いた残り (法律名だけが入っている) を houki-egov-mcp の `get_law` に渡す
 2. 条番号は応答に入っていない。通達の本文にある「法第34条第6項」「令第133条」のような参照を読み、`base_laws` の該当する法令名と `article` / `paragraph` を指定して引き直す。基本通達の本文では「法」は法律、「令」は施行令、「規則」は施行規則を指すのが通例 (正確には各通達の冒頭の用語の定義で確かめる)
 3. 引いた条文を citation の「法律 (法的根拠)」「政令 / 省令」に置き、通達はその下の「行政解釈」に置く
 
 質疑応答事例から戻るとき:
 
 1. `nta_get_qa` は `format` の既定が `markdown` で、markdown には `related_laws` などが出ない。**`format: "json"` を指定する**
-2. `next_actions[].example` には条・項・号まで入っているので、そのまま `get_law` / `nta_get_tsutatsu` に渡す。通達と違い、条番号を本文から補う手順は要らない
+2. `next_actions[].example` には条・項・号まで入っているので、`mcp` と `tool` を除いた残りを `get_law` に渡す。通達と違い、条番号を本文から補う手順は要らない。`nta_get_tsutatsu` への案内の `example` は `name` と `clause` だけなので、そのまま渡せる
 3. 枝番号の号 (「法人税法第2条第12号の8」) は `item: "12の8"` の文字列で入る (houki-nta-mcp v0.14.0 以上)。`get_law` が文字列の `item` を受け付けるのは houki-egov-mcp v0.6.0 以上。それより前の egov なら `item` を外して項全体を引き、本文から探す
 4. `next_actions` が付かない参照は、`related_laws` / `related_tsutatsu` の `raw` を読んで次のとおり扱う:
 
@@ -180,7 +189,8 @@ houki-nta-mcp が v0.10.x 以前だと `base_laws` は無く、v0.11.x 以前だ
 | 典型エラー                              | 対応                                       |
 | --------------------------------------- | ------------------------------------------ |
 | `LAW_NOT_FOUND` / `*_NOT_FOUND`         | 略称解決 → 検索 → 目次の順でフォールバック |
-| `nta_search_*` の `DOC_NOT_FOUND` (`next_actions` が `cli_bulk_download`) | その種別の文書がローカル DB に無い。**「該当なし」と答えない**。フォールバックせず、`next_actions` の投入コマンドをユーザーに案内する (houki-nta-mcp v0.13.0 以上) |
+| `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND` で `next_actions` が `cli_bulk_download` | その種別の文書がローカル DB に無い。**「該当なし」と答えない**。フォールバックせず、`next_actions` の投入コマンドをユーザーに案内する (検索ツールは houki-nta-mcp v0.13.0 以上、取得ツールは v0.14.1 以上) |
+| 取得ツールの `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND` で `available_doc_ids` が付く | docId の誤り。投入は案内しない。`available_doc_ids` から選ぶか、`next_actions` の検索ツールで docId を探し直す (houki-nta-mcp v0.14.1 以上) |
 | `SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE` | 最大 2 回まで retry。失敗時は平易に説明    |
 | `SOURCE_RATE_LIMITED`                   | 当該セッションで同種呼び出しを停止         |
 | `INVALID_PDF` / `ENCRYPTED_PDF`         | HTML 版や別添付に切替、citation に注記     |
@@ -205,7 +215,7 @@ houki-nta-mcp が v0.10.x 以前だと `base_laws` は無く、v0.11.x 以前だ
 | `@shuji-bonji/houki-saiketsu-mcp` | 各省庁の裁決             | 国税不服審判所・公取委・特許庁審判部・各省庁不服審査会 |
 | `@shuji-bonji/houki-court-mcp`    | 判例                     | 最高裁・高裁・地裁の全公開判例                         |
 
-これらが追加されても本スキルの **行動指針 (4 責務 / 鉄則 4 つ)** は不変。新 MCP は同じ階層原則に従って統合される。
+これらが追加されても本スキルの **行動指針 (4 責務 / 鉄則 5 つ)** は不変。新 MCP は同じ階層原則に従って統合される。
 
 PDF 抽出時の選択ガイド:
 

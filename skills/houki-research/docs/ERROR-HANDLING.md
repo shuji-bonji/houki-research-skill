@@ -53,9 +53,11 @@ flowchart TB
 | ユーザーに見せるか | 通常は見せない (透過的に正しい MCP に切り替える)                                                   |
 | 例外               | 推奨先 MCP が family にまだ実装されていない場合 (`houki-court-mcp` 等) は、その旨をユーザーに案内  |
 
-### 検索ツールの `DOC_NOT_FOUND` / 空の DB での `TSUTATSU_NOT_FOUND` (ローカル DB に無い)
+### `next_actions` が `cli_bulk_download` の `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND` (ローカル DB に無い)
 
-houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `nta_search_kaisei_tsutatsu` / `nta_search_jimu_unei` / `nta_search_bunshokaitou`。v0.13.0 以上) は、その種別の文書がローカル DB に 1 件も無いとき `DOC_NOT_FOUND` を返す。`nta_search_tsutatsu` は通達が 1 件も無いとき `TSUTATSU_NOT_FOUND` を返す。どちらも `next_actions` の `action` が `cli_bulk_download` になっている。上の「docId が誤っている」ときの `*_NOT_FOUND` とは原因が違う。
+houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `nta_search_kaisei_tsutatsu` / `nta_search_jimu_unei` / `nta_search_bunshokaitou`。v0.13.0 以上) は、その種別の文書がローカル DB に 1 件も無いとき `DOC_NOT_FOUND` を返す。`nta_search_tsutatsu` は通達が 1 件も無いとき `TSUTATSU_NOT_FOUND` を返す。取得ツール (`nta_get_kaisei_tsutatsu` / `nta_get_jimu_unei` / `nta_get_bunshokaitou`。v0.14.1 以上) も、その種別の文書が 1 件も無いときは同じ形で返す。いずれも `next_actions` の `action` が `cli_bulk_download` になっている。上の「docId が誤っている」ときの `*_NOT_FOUND` とは原因が違う。
+
+**投入が必要なのか、docId が誤っているのかは `next_actions` で見分ける。** `action` が `cli_bulk_download` なら投入が必要。`action` が検索ツール (`nta_search_*`) で `available_doc_ids` が付いていれば、投入は済んでいて docId が誤っているだけなので、投入を案内しない。
 
 | 項目               | 内容                                                                                                   |
 | ------------------ | ------------------------------------------------------------------------------------------------------ |

@@ -112,7 +112,7 @@ LLM は目次から「**第 57 条の 2**」が登録番号関連と当たりを
 
 ### Skill の動作
 
-[`docs/ERROR-HANDLING.md`](../docs/ERROR-HANDLING.md) §「`*_NOT_FOUND`」: 検索系 tool でフォールバック。`next_actions` の `nta_search_tsutatsu` をそのまま実行。
+[`docs/ERROR-HANDLING.md`](../docs/ERROR-HANDLING.md) §「`*_NOT_FOUND`」: 検索系 tool でフォールバック。`next_actions` の検索ツール (`nta_search_kaisei_tsutatsu`) と `available_doc_ids` を使う。`next_actions` が `cli_bulk_download` でないので、DB への投入は案内しない。
 
 ### MCP 呼び出しの引数
 
@@ -120,26 +120,36 @@ LLM は目次から「**第 57 条の 2**」が登録番号関連と当たりを
 { "tool": "nta_get_kaisei_tsutatsu", "args": { "docId": "0025004-999" } }
 ```
 
-`isError: true` で以下が返る:
+`isError: true` で以下が返る (houki-nta-mcp v0.14.1。改正通達が DB に入っている場合):
 
 ```json
 {
-  "error": "通達 docId=0025004-999 が見つかりません",
+  "error": "改正通達 docId=\"0025004-999\" は見つかりません",
   "code": "TSUTATSU_NOT_FOUND",
-  "hint": "nta_search_kaisei_tsutatsu で正しい docId を検索してください",
+  "hint": "DB の改正通達 30 件に、この docId はありません。available_doc_ids（新しい順に 30 件）から選ぶか、nta_search_kaisei_tsutatsu で検索して docId を確かめてください。DB を投入した後に国税庁が公開した文書は、`houki-nta-mcp --bulk-download-kaisei` をもう一度実行すると取り込めます",
+  "available_doc_ids": [
+    {
+      "docId": "0026003-067",
+      "title": "消費税法基本通達の一部改正について（法令解釈通達）",
+      "issuedAt": "2026-04-01"
+    },
+    {
+      "docId": "0025004-026",
+      "title": "消費税法基本通達の一部改正について（法令解釈通達）",
+      "issuedAt": "2025-04-01"
+    }
+  ],
   "next_actions": [
     {
       "action": "nta_search_kaisei_tsutatsu",
-      "reason": "キーワード検索で該当通達を探せます",
-      "example": { "keyword": "適格請求書", "hasPdf": true }
+      "reason": "キーワード検索で正しい docId を探せます"
     }
   ],
-  "retryable": false,
-  "available_doc_ids": ["0025004-026", "0025004-031"]
+  "tool": "nta_get_kaisei_tsutatsu"
 }
 ```
 
-houki-nta-mcp 固有の `available_doc_ids` ヒントが付くので、LLM は **タイポの可能性** を察知して `0025004-026` を最有力候補とする:
+houki-nta-mcp 固有の `available_doc_ids` (新しい順に 30 件、`docId` / `title` / `issuedAt`) が付くので、LLM は **タイポの可能性** を察知して、題名と日付からインボイス関連の `0025004-026` を最有力候補とする:
 
 ```jsonc
 // ① まず available_doc_ids の最有力候補を試す
@@ -147,7 +157,9 @@ houki-nta-mcp 固有の `available_doc_ids` ヒントが付くので、LLM は *
 // → ヒット
 ```
 
-候補が外れていれば `next_actions[0]` で検索にフォールバック。
+候補が外れていれば `next_actions[0]` の `nta_search_kaisei_tsutatsu` にキーワードを添えて検索する。
+
+改正通達が DB に 1 件も入っていない場合は、同じ `code` でも中身が変わる。`error` が「ローカル DB に改正通達が 1 件も無いため、docId=… を取得できません」、`next_actions[0].action` が `cli_bulk_download` になり、`available_doc_ids` は付かない。このときは docId を探し直さず、投入コマンド (`houki-nta-mcp --bulk-download-kaisei`) と DB のパスをユーザーに伝える ([`docs/ERROR-HANDLING.md`](../docs/ERROR-HANDLING.md) の該当節)。
 
 ### 期待される回答
 
@@ -170,6 +182,7 @@ houki-nta-mcp 固有の `available_doc_ids` ヒントが付くので、LLM は *
 ❌ `available_doc_ids` を無視して即「見つかりません」と打ち切る
 ❌ docId のタイポを利用者に再入力させる (LLM が候補補完できる場面で)
 ❌ `next_actions` を見ず、houki-egov-mcp など別 MCP を試す
+❌ `available_doc_ids` が付いているのに「DB に投入してください」と案内する (投入が必要なのは `next_actions[0].action` が `cli_bulk_download` のとき)
 
 ---
 

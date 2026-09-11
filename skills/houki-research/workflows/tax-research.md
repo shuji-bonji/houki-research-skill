@@ -157,7 +157,7 @@ houki-nta-mcp v0.11.0 以上では、応答に解釈の対象になる法律と�
 
 ステップ ③ を飛ばして通達から入った場合や、③ で引いた条と通達が参照している条が違う場合は、ここで法律本文へ戻る。
 
-1. `next_actions[].example` を houki-egov-mcp の `get_law` にそのまま渡す (法律名だけが入っている)
+1. `next_actions[].example` から `mcp` と `tool` を除いた残り (法律名だけが入っている) を houki-egov-mcp の `get_law` に渡す。`mcp` と `tool` はどの MCP のどの tool を呼ぶかを示すもので引数ではなく、そのまま渡すと houki-egov-mcp v0.6.0 以上では `INVALID_ARGUMENT` (`mcp, tool: inputSchema に無い引数です`) になる
 2. 条番号は応答に入っていないので、通達の本文の参照 (例: 消基通 1-7-2 の「法第57条の2第4項」) を読み、`article` / `paragraph` を足して引き直す。基本通達の本文では「法」は法律、「令」は施行令、「規則」は施行規則を指すのが通例
 
 ```jsonc
@@ -180,7 +180,7 @@ houki-nta-mcp v0.11.0 以上では、応答に解釈の対象になる法律と�
 質疑応答事例 (`nta_search_qa` → `nta_get_qa`) から入った場合は、【関係法令通達】欄に挙がっている法律と通達へ戻る。質疑応答事例は国税庁の参考資料で、税務署員も拘束しない (`legal_status` の `binds_*` がすべて `false`)。
 
 1. `nta_get_qa` は **`format: "json"` を指定する** (既定の markdown には `related_laws` などが出ない)
-2. `next_actions[].example` をそのまま渡す。通達と違い、条・項・号まで入っている
+2. `next_actions[].example` から `mcp` と `tool` を除いた残りを渡す。通達と違い、条・項・号まで入っている。`nta_get_tsutatsu` への案内の `example` は `name` と `clause` だけなので、そのまま渡せる
 3. `next_actions` が付かない参照 (租税条約・「旧」「改正前」の条文・条番号の無い法令・基本通達 4 種以外の通達) は、`related_laws` / `related_tsutatsu` の `raw` を読んで [`SKILL.md`](../SKILL.md) 鉄則 3 の表のとおり扱う
 
 houki-nta-mcp v0.12.0 の応答の抜粋 (2026-09-11、`{ "topic": "shohi", "category": "02", "id": "19", "format": "json" }`):
@@ -272,6 +272,7 @@ flowchart TB
 
 - ❌ 法律本文を確認せずに通達だけ引用する → 通達は内部文書なので、法的根拠が抜ける
 - ❌ 通達の応答の `next_actions` (`delegate_to_mcp` → houki-egov-mcp の `get_law`) を読まずに回答を終える → 同上。成功時の応答にも付くので、エラーのときだけ見るのでは足りない
+- ❌ `next_actions[].example` を `mcp` と `tool` ごと `get_law` に渡す → egov v0.6.0 以上は inputSchema に無い引数を `INVALID_ARGUMENT` で返す。`mcp` と `tool` を除いてから渡す
 - ❌ 質疑応答事例の回答だけで答える → 参考資料で誰も拘束しない。`next_actions` で法律本文と通達へ戻る
 - ❌ `nta_get_qa` を `format` の既定 (markdown) のまま呼んで、根拠の条文を本文から探す → `format: "json"` の `related_laws` と `next_actions` を使う
 - ❌ `qa.notice` を落とす → 作成時点 (`basisDate`) と「個別の取引では異なる課税関係が生じうる」という断り書きが citation から消える

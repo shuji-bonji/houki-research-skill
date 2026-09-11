@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.1] - 2026-09-12
+
+**patch リリース** — houki-egov-mcp v0.6.0 / houki-nta-mcp v0.14.0 で未知の引数がエラーになったのに合わせて、`next_actions[].example` の渡し方を直しました。手順そのものは v0.5.0 と同じです。
+
+### 修正
+
+- **`next_actions[].example` の渡し方**: `example` には `mcp` と `tool`（どの MCP のどの tool を呼ぶかを示すもの）が入っている。これを「そのまま `get_law` に渡す」と書いていたため、inputSchema に無い引数を拒む houki-egov-mcp v0.6.0 以上では `INVALID_ARGUMENT`（`mcp, tool: inputSchema に無い引数です`）になっていた。`mcp` と `tool` を除いた残りを引数にする、と書き直した（`SKILL.md` 鉄則 3、`workflows/tax-research.md` ステップ ④' と ④''、アンチパターン 1 件）
+- **`examples/error-recovery-patterns.md` シナリオ 2**: 改正通達の docId が見つからないときの応答を、houki-nta-mcp v0.14.1 の実際の応答に差し替えた（`error` の文、`available_doc_ids` は `docId` / `title` / `issuedAt` のオブジェクト、`next_actions` は `nta_search_kaisei_tsutatsu`）。「`nta_search_tsutatsu` をそのまま実行」という説明文が JSON の `nta_search_kaisei_tsutatsu` と食い違っていたのも直した。DB にその種別の文書が 1 件も無いときとの違い（`next_actions` が `cli_bulk_download` になり `available_doc_ids` が付かない）も書いた
+- **`docs/ERROR-HANDLING.md`**: 「ローカル DB に無い」節の見出しを、検索ツールだけでなく取得ツール（houki-nta-mcp v0.14.1 以上）も含む形にし、docId の誤りとの見分け方（`next_actions` が `cli_bulk_download` か、`available_doc_ids` が付くか）を書いた
+- **`docs/ERROR-CODES.md`**: `INVALID_ARGUMENT` の説明に、inputSchema に無い引数もエラーになること（egov 0.6.0 以上 / nta 0.14.0 以上）と、`detail.issues[].path` に引数名が読点区切りで並ぶことを足した
+- **`SKILL.md` 鉄則 5 の表**: 取得ツールの `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND` に `available_doc_ids` が付くときは docId の誤りで、投入を案内しないことを足した
+- 「鉄則 4 つ」という古い記述を「鉄則 5 つ」に直した（`SKILL.md`、`docs/ARCHITECTURE.md`）
+
+### 更新
+
+- 前提 MCP の注記に houki-nta-mcp v0.14.1（取得ツールの docId 誤りと DB 未投入の切り分け）を足した（`README.md` の表と `.github/workflows/release.yml` のリリースノート）。推奨最小バージョンは据え置き
+
 ## [0.5.0] - 2026-09-12
 
 **minor リリース** — houki-nta-mcp 0.12.0〜0.14.0 への追随。質疑応答事例から、応答の `next_actions` に従って法律本文と通達へ戻る手順を足しました。検索ツールが返す `DOC_NOT_FOUND` (ローカル DB に無い) の扱いも足しました。業法の注意喚起・citation の階層は変わりません。
