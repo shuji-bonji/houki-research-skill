@@ -114,6 +114,22 @@ sequenceDiagram
 
 `search_fulltext` はローカル DB (`houki-egov-mcp --bulk-download-everything` で構築) を引く。DB が無いと応答の `source` が `"api-fallback"` になり、`search_law` の結果が `fallback` に入って返る。このときは **本文検索ができていない**ので、回答で「法令名の一致で探した」と明示し、`next_actions` の `bulk_download_everything` をユーザーに案内する。
 
+#### 通達を先に引いたら、法律本文へ戻る (houki-nta-mcp v0.11.0 以上)
+
+問いによっては通達の検索 (④) から入ることがある。通達は国民・裁判所を拘束しないので、**通達だけで回答を終えず、必ず法律本文 (③) へ戻る**。戻り先は houki-nta-mcp の応答に入っている:
+
+| 呼んだ tool | 戻り先が入るフィールド | 中身 |
+| --- | --- | --- |
+| `nta_get_tsutatsu` | `base_laws` | その通達が解釈している法律・施行令・施行規則の配列 |
+| `nta_search_tsutatsu` | `base_laws_by_tsutatsu` | 結果に現れた通達ごとの同じ配列 (`hits[].tsutatsu` をキーに引く) |
+| 上の両方 | `next_actions` | `{ "action": "delegate_to_mcp", "example": { "mcp": "houki-egov", "tool": "get_law", "law_name": "…" } }`。**エラーでなくても付く** |
+
+1. `next_actions[].example` をそのまま houki-egov-mcp の `get_law` に渡す (法律名だけが入っている)
+2. 条番号は応答に入っていない。通達の本文にある「法第34条第6項」「令第133条」のような参照を読み、`base_laws` の該当する法令名と `article` / `paragraph` を指定して引き直す。基本通達の本文では「法」は法律、「令」は施行令、「規則」は施行規則を指すのが通例 (正確には各通達の冒頭の用語の定義で確かめる)
+3. 引いた条文を citation の「法律 (法的根拠)」「政令 / 省令」に置き、通達はその下の「行政解釈」に置く
+
+houki-nta-mcp が v0.10.x 以前だとこのフィールドは無い。そのときは通達の本文の参照から法令名を自分で補う。
+
 ### 鉄則 4: citation は階層を明示する
 
 回答の末尾に **「Sources:」** セクションを設け、各情報の階層を必ず示す。詳細は [`docs/CITATION.md`](docs/CITATION.md)。

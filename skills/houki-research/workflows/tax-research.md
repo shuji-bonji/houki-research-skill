@@ -37,7 +37,11 @@ sequenceDiagram
     E-->>S: 条文 + legal_status
 
     S->>N: ④ 通達による解釈を取得
-    N-->>S: 通達本文 + legal_status (binds_tax_office=true)
+    N-->>S: 通達本文 + legal_status (binds_tax_office=true)<br/>+ base_laws + next_actions (v0.11.0+)
+    opt 通達を先に引いた / 法律の条がまだ引けていない
+        S->>E: ④' next_actions に従い get_law で法律本文へ戻る
+        E-->>S: 条文
+    end
 
     S->>N: ⑤ 改正履歴 (kaisei) を検索
     N-->>S: 改正通達一覧 (hasPdf=true 推奨)
@@ -124,6 +128,47 @@ sequenceDiagram
 
 これが citation の **「行政解釈 (通達)」** セクションになる。`legal_status` の `binds_citizens=false` を **必ず** 注釈する。
 
+houki-nta-mcp v0.11.0 以上では、応答に解釈の対象になる法律と、houki-egov-mcp への戻り方が入る:
+
+```jsonc
+// nta_get_tsutatsu (format: "json") の応答の末尾
+{
+  "base_laws": ["消費税法", "消費税法施行令", "消費税法施行規則"],
+  "next_actions": [
+    {
+      "action": "delegate_to_mcp",
+      "reason": "通達は国民・裁判所を拘束しない。根拠は法律本文で確認する",
+      "example": { "mcp": "houki-egov", "tool": "get_law", "law_name": "消費税法" }
+    }
+  ]
+}
+// nta_search_tsutatsu では base_laws の代わりに
+//   "base_laws_by_tsutatsu": { "消費税法基本通達": ["消費税法", "消費税法施行令", "消費税法施行規則"] }
+// が 1 回だけ入り、next_actions は結果に現れた通達ごとに 1 件
+```
+
+### ステップ ④': 通達から法律本文へ戻る
+
+ステップ ③ を飛ばして通達から入った場合や、③ で引いた条と通達が参照している条が違う場合は、ここで法律本文へ戻る。
+
+1. `next_actions[].example` を houki-egov-mcp の `get_law` にそのまま渡す (法律名だけが入っている)
+2. 条番号は応答に入っていないので、通達の本文の参照 (例: 消基通 1-7-2 の「法第57条の2第4項」) を読み、`article` / `paragraph` を足して引き直す。基本通達の本文では「法」は法律、「令」は施行令、「規則」は施行規則を指すのが通例
+
+```jsonc
+// 消基通 1-7-2 の本文「法第57条の2第4項」→ base_laws の先頭 (消費税法) の 57 条の 2 第 4 項
+{
+  "tool": "get_law",
+  "args": { "law_name": "消費税法", "article": "57の2", "paragraph": 4 }
+}
+// 所基通 49-39 の本文「令第138条」→ base_laws の 2 番目 (所得税法施行令) の 138 条
+{
+  "tool": "get_law",
+  "args": { "law_name": "所得税法施行令", "article": "138" }
+}
+```
+
+引いた条文は citation の「法律 (法的根拠)」「政令 / 省令」に置く。
+
 ### ステップ ⑤: 改正履歴を検索
 
 ```jsonc
@@ -183,6 +228,7 @@ flowchart TB
 ## アンチパターン
 
 - ❌ 法律本文を確認せずに通達だけ引用する → 通達は内部文書なので、法的根拠が抜ける
+- ❌ 通達の応答の `next_actions` (`delegate_to_mcp` → houki-egov-mcp の `get_law`) を読まずに回答を終える → 同上。成功時の応答にも付くので、エラーのときだけ見るのでは足りない
 - ❌ 改正前後の差分を `read_text` で読む → カラムが交互連結し改正点が判別不能。`extract_tables` または `split_columns: 2` を使う
 - ❌ `legal_status` の引用を省略する → 通達と法律を同列に扱う citation になる
 - ❌ 「あなたの確定申告では…」と個別判断を返す → 業法独占規定 (税理士法 52 条) に抵触するおそれ

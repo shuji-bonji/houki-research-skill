@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0] - 2026-09-11
+
+**minor リリース** — houki-nta-mcp 0.11.0 への追随。通達を引いたあとに、応答の `next_actions` に従って法律本文へ戻る手順を足しました。業法の注意喚起・エラー契約・citation 書式は変わりません。
+
+### 追加
+
+- `SKILL.md` 鉄則 3 に「通達を先に引いたら、法律本文へ戻る」を追加。`nta_get_tsutatsu` の `base_laws`、`nta_search_tsutatsu` の `base_laws_by_tsutatsu`、成功時にも付く `next_actions` (`delegate_to_mcp` → houki-egov-mcp の `get_law`) の読み方と、条番号は通達の本文の参照 (「法第N条」「令第N条」) から補うことを書いた
+- `workflows/tax-research.md` にステップ ④' (通達から法律本文へ戻る) を追加。シーケンス図、応答の例、`get_law` の呼び出し例 (消基通 1-7-2 → 消費税法 57 条の 2 第 4 項、所基通 49-39 → 所得税法施行令 138 条) と、`next_actions` を読まずに終えるアンチパターンを足した
+- `docs/ARCHITECTURE.md` の応答契約の表に `base_laws` / `base_laws_by_tsutatsu` と成功時の `next_actions` を追加
+
+### 更新
+
+- 前提 MCP の houki-nta-mcp を v0.10.0 以上から **v0.11.0 以上** に上げた (`README.md` の表と `.github/workflows/release.yml` のリリースノート)。v0.10.x でもエラー契約は同じで動作はするが、上の手順のフィールドが無い
+
 ## [0.3.0] - 2026-09-10
 
 **minor リリース** — 境界 ② (個別事案への当てはめ) で何を返し、何を返さないかを応答型として固定しました。手順・エラー契約・citation 書式は変わりません。
