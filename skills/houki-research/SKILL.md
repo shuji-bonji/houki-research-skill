@@ -160,6 +160,25 @@ sequenceDiagram
 
 houki-nta-mcp が v0.10.x 以前だと `base_laws` は無く、v0.11.x 以前だと `related_laws` は無い。そのときは本文の参照から法令名を自分で補う。
 
+#### 索引から消えた文書は現行の取扱いとして引用しない (houki-nta-mcp v0.17.0 以上)
+
+`nta_search_*` の結果の各件と `nta_get_*` の応答に `index_status: "removed_from_index"` と `orphaned_at` が付いていたら、その文書は国税庁の索引から外れている。houki-nta-mcp は削除せず残しているので、過去の課税期間を調べるときは引ける。**現在の取扱いを答える根拠にはしない。**
+
+- 検索結果から除外はされない。索引にある文書と同じ形で並び、`search_notes` に「N 件のうち M 件は索引から外れています」の行が入る
+- `sourceUrl` は 404 になることがある。本文はローカル DB に残っているので `nta_get_*` では読める
+- 現在の取扱いを問われているなら、同じ論点の現行の文書を探し直す。見つからなければ「索引から外れた文書しか見つからなかった」と書き、断定しない
+- citation では、印が付いていることと `orphaned_at` を注に残す ([`docs/CITATION.md`](docs/CITATION.md))
+
+`freshness` の `stale` / `outdated` とは別のことを指す。`freshness` は「最後に取得してから日が経った」で、`index_status` は「国税庁の索引から外れた」。ローカル DB が新しくても印は付く。
+
+houki-nta-mcp が v0.16.x 以前だと `index_status` は付かない。そのときは索引から消えた文書を現行の文書と区別できないので、`sourceUrl` が 404 になる文書に当たったら、その旨を citation に書く。
+
+#### 取得ツールの `source` は取得時刻の意味を変える (houki-nta-mcp v0.16.0 以上)
+
+`nta_get_tsutatsu` / `nta_get_qa` / `nta_get_tax_answer` の応答の `source` は、ローカル DB (`"db"`) と国税庁サイト (`"live"`) のどちらから返したかを示す (質疑応答事例とタックスアンサーは v0.16.0 以上。それ以前は毎回国税庁サイトから取得していた)。
+
+判断の根拠は変わらないが、`fetchedAt` の意味が変わる。`"db"` なら bulk download で取り込んだ日時で、呼び出した時刻ではない。citation の取得時刻にはその値をそのまま書く。呼び出した時刻に置き換えない。
+
 ### 鉄則 4: citation は階層を明示する
 
 回答の末尾に **「Sources:」** セクションを設け、各情報の階層を必ず示す。詳細は [`docs/CITATION.md`](docs/CITATION.md)。
