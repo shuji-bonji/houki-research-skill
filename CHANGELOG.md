@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.6.0] - 2026-09-13
+
+**minor リリース** — houki-nta-mcp v0.16.0 / v0.17.0 への追随。国税庁の索引から外れた文書を、現在の取扱いの根拠として引用しない手順を足しました。取得ツールが返す `source` で取得時刻の意味が変わる点も足しました。業法の注意喚起・citation の階層は変わりません。
+
+### 追加
+
+- **`SKILL.md` 鉄則 3 に「索引から消えた文書は現行の取扱いとして引用しない」**: `nta_search_*` の各件と `nta_get_*` の応答に `index_status: "removed_from_index"` と `orphaned_at` が付く (houki-nta-mcp v0.17.0 以上)。houki-nta-mcp は索引から外れた文書を削除せず残すので、検索結果には索引にある文書と同じ形で並ぶ。過去の課税期間を調べるときは引けるが、現在の取扱いを答える根拠にはしない。現行の文書を探し直し、見つからなければ断定しない
+  - `freshness` の `stale` / `outdated` とは別のことを指す点も書いた。`freshness` は「最後に取得してから日が経った」、`index_status` は「国税庁の索引から外れた」で、ローカル DB が新しくても印は付く
+  - houki-nta-mcp が v0.16.x 以前だと印が付かないため、`sourceUrl` が 404 になる文書に当たったらその旨を citation に書く、という退避も書いた
+- **`SKILL.md` 鉄則 3 に「取得ツールの `source` は取得時刻の意味を変える」**: `nta_get_qa` / `nta_get_tax_answer` は v0.16.0 からローカル DB を先に引く。`source: "db"` のときの `fetchedAt` は bulk download で取り込んだ日時で、呼び出した時刻ではない。citation にはその値をそのまま書き、呼び出した時刻に置き換えない
+- **`docs/CITATION.md` の基本原則に 6 つ目**: 索引から消えた文書には印を添える。見出しは元の種別 (行政解釈 / 参考情報) のままにし、専用の見出しは作らない。標準フォーマットの「行政解釈」に書き方の例を 1 件足した
+- **`docs/CITATION.md` の基本原則 3**: 取得時刻は `source: "db"` ならローカル DB に取り込んだ日時である旨を足した
+- **`docs/CITATION.md` の階層ラベルの対応表**: 索引から外れた資料の行を足した
+- **`docs/ARCHITECTURE.md` の応答契約の表**: `source` と `index_status` / `orphaned_at` の行を足した
+
+### 更新
+
+- 前提 MCP の注記に houki-nta-mcp v0.16.0 (取得ツールの `source`) と v0.17.0 (`index_status`) を足した (`README.md` の表と `.github/workflows/release.yml` のリリースノート)。推奨最小バージョンは v0.12.0 のまま据え置き。どちらも応答に項目が増えるだけで、無くても手順は動く
+
 ## [0.5.1] - 2026-09-12
 
 **patch リリース** — houki-egov-mcp v0.6.0 / houki-nta-mcp v0.14.0 で未知の引数がエラーになったのに合わせて、`next_actions[].example` の渡し方を直しました。手順そのものは v0.5.0 と同じです。
