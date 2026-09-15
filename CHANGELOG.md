@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.7.0] - 2026-09-14
+
+**minor リリース** — この skill を入れると、前提の MCP 2 つ (`houki-egov-mcp` / `houki-nta-mcp`) も一緒に入るようにしました。手順そのものは v0.6.0 と同じです。
+
+### 追加
+
+- **`.claude-plugin/plugin.json` に `dependencies`**: `["houki-egov-mcp", "houki-nta-mcp"]`。marketplace 経由で `houki-research` を install すると、この 2 つも解決して install される。有効化も連動する (この skill を有効にすると 2 つも有効になり、どちらかを単独で無効にしようとすると止められる)
+  - 版の範囲は付けず、名前だけを書いた。範囲を付けると `houki-egov-mcp--v0.6.0` の形の git tag が要るが、各 MCP のタグは `v0.6.0` の形なので解決できない。名前だけなら marketplace の最新が入る
+  - `@shuji-bonji/pdf-reader-mcp` は入れていない。PDF に当たったときだけ要るもので、条文と通達を引く流れでは使わない。houki-nta-mcp #36 (改正通達の PDF の読み方) の結論が出てから決める
+  - `@shuji-bonji/houki-abbreviations` は各 MCP に内蔵されるライブラリで、plugin ではないため対象外
+- **`shuji-bonji/claude-plugins` の `marketplace.json`** の `houki-research` にも同じ `dependencies` を書いた (pdf-publish / pdf-trust / pdf-read と同じ形)
+
+### 背景
+
+houki-hub#22 (発見性 — 1 種類の仕事を 1 回の導入で終わらせる)。これまでは `houki-research` / `houki-egov-mcp` / `houki-nta-mcp` を 3 回入れる必要があった。
+
+なお、これで減るのは導入の**手数**であって**時間**ではない。入れた直後に houki-egov-mcp は約 290 MB、houki-nta-mcp は 6 種別で約 100 分の取り込みが要る。時間のほうは houki-nta-mcp #35 で扱う。
+
 ## [0.6.0] - 2026-09-13
 
 **minor リリース** — houki-nta-mcp v0.16.0 / v0.17.0 への追随。国税庁の索引から外れた文書を、現在の取扱いの根拠として引用しない手順を足しました。取得ツールが返す `source` で取得時刻の意味が変わる点も足しました。業法の注意喚起・citation の階層は変わりません。

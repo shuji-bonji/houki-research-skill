@@ -127,9 +127,13 @@ git clone https://github.com/shuji-bonji/houki-research-skill houki-research-ski
 # 1. shuji-bonji の marketplace を追加 (初回のみ)
 /plugin marketplace add shuji-bonji/claude-plugins
 
-# 2. plugin を install
+# 2. plugin を install (v0.7.0 以上は houki-egov-mcp と houki-nta-mcp も一緒に入ります)
 /plugin install houki-research@shuji-bonji
 ```
+
+v0.7.0 から `houki-egov-mcp` と `houki-nta-mcp` を `dependencies` に宣言しているため、この 1 コマンドで条文と通達の両方を引ける状態になります。有効化も連動します。
+
+ただし、入っただけでは全文検索は効きません。houki-egov-mcp は約 290 MB、houki-nta-mcp は 6 種別で約 100 分の取り込みが要ります。下記「前提となる MCP 群」のあとに続く各リポジトリの README を参照してください。
 
 ### D. Cowork Enterprise (組織管理者向け)
 
@@ -144,7 +148,7 @@ git clone https://github.com/shuji-bonji/houki-research-skill houki-research-ski
 
 ## 前提となる MCP 群
 
-このスキルは以下が **すべて Claude に登録済み**であることを前提とします。
+このスキルは以下が **すべて Claude に登録済み**であることを前提とします。marketplace 経由で install した場合、`houki-egov-mcp` と `houki-nta-mcp` は v0.7.0 から自動で入ります (`pdf-reader-mcp` は別途)。
 
 | MCP / パッケージ                   | 推奨最小バージョン                                 | npm                                                                   | リポジトリ                                                   |
 | ---------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------ |

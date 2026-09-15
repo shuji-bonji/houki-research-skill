@@ -58,7 +58,7 @@ jobs:
 
           ### インストール方法
 
-          - **Claude Code (推奨)**: `/plugin marketplace add shuji-bonji/claude-plugins` → `/plugin install houki-research@shuji-bonji`
+          - **Claude Code (推奨)**: `/plugin marketplace add shuji-bonji/claude-plugins` → `/plugin install houki-research@shuji-bonji` (v0.7.0 以上は `houki-egov-mcp` / `houki-nta-mcp` も一緒に入ります)
           - **Cowork (推奨)**: Settings → Customize → Plugins → Marketplace に `https://github.com/shuji-bonji/claude-plugins` を追加
           - **Cowork (.plugin 直接)**: 下記の `houki-research-*.plugin` を Cowork に drag&drop
           - **手動 clone**: `git clone https://github.com/shuji-bonji/houki-research-skill ~/.claude/skills/houki-research-skill`
