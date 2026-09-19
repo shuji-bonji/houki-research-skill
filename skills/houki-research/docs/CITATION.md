@@ -57,6 +57,43 @@
   > **注**: 国税庁の参考資料。令和7年8月1日現在の法令・通達等に基づいて作成 (`qa.basisDate`: 2025-08-01)。個別の取引に当てはめると異なる課税関係が生じうる旨の断り書きがある (`qa.notice`)。根拠は上の「法律」「行政解釈」に挙げた条文と通達 (【関係法令通達】: 消費税法第2条第1項第8号、消費税法基本通達5-1-1)
 ```
 
+## 引用を書き出す前に確かめる (verify_citations)
+
+`## Sources` を書く前に、法律・政令・省令の引用を **houki-egov-mcp の `verify_citations`** にまとめて渡し、その条 (指定があれば項・号) が e-Gov の法令にあることを確かめる (houki-egov-mcp v0.11.0 以上)。1 件ずつ `get_law` を呼ぶ代わりに 1 回で済み、存在しない引用が混ざっていてもツール全体はエラーにならない。
+
+```jsonc
+{
+  "citations": [
+    { "law_name": "消法", "article": "57の2", "label": "消費税法 第57条の2" },
+    { "law_name": "消費税法施行令", "article": "70の5", "label": "消費税法施行令 第70条の5" }
+  ]
+}
+```
+
+`label` に citation に書く文字列をそのまま入れておくと、`results[]` の各件と `## Sources` の各行が 1 対 1 で対応する。
+
+### 判定ごとの扱い
+
+| `status` | `code` | citation での扱い |
+|---|---|---|
+| `found` | — | そのまま書く。`law.title` を正式名称に、`article.caption` を条見出しに、`law.url` をリンクに使う |
+| `not_found` | `ARTICLE_NOT_FOUND` | **その引用は citation から外す。** 条番号を書き間違えた可能性が高いので、`next_actions` の `get_toc` で正しい条番号を探し直す |
+| `not_found` | `LAW_NOT_FOUND` | 法令名を書き間違えた可能性が高い。`resolve_abbreviation` → `search_law` で引き直す |
+| `not_found` | `INVALID_ARTICLE_NUM` | 条番号・号番号の書き方の誤り (「30-2」など)。「30の2」の形に直して呼び直す |
+| `not_found` | `OUT_OF_SCOPE` | 通達・QA などを法令として引こうとしている。houki-nta-mcp の取得ツールで引き直し、citation の見出しも「行政解釈」「参考情報」に移す |
+| `ambiguous` | (なし) | 法令名が e-Gov の法令名と完全一致していない。`candidates[]` から指したい法令を選び、その `law_id` で呼び直す。**どれか 1 つを推測して citation に書かない** |
+| `ambiguous` | `INVALID_ARGUMENT` | 項が複数ある条で項を書かずに号だけを引いている。本文を読んでどの項の号かを決め、`paragraph` を足して呼び直す |
+
+`summary.all_found` が true のときだけ「引用はすべて実在を確認した」と書いてよい。false のまま残した引用があるなら、その行に「実在を確認できていない」と注を付ける。
+
+### 確かめていないこと
+
+`verify_citations` が確かめるのは **条文が実在するか** だけで、その条文が回答の主張を支えるかどうかは判定していない。「`verify_citations` で確認済み」は「引用が正しい」の意味では使わない。
+
+e-Gov に問い合わせられなかったときは、件ごとの判定ではなくツール全体が `SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE` / `SOURCE_API_ERROR` になる。このときは引用を消さず、citation に「実在確認は e-Gov に接続できず未実施」と注記する ([`ERROR-HANDLING.md`](ERROR-HANDLING.md))。
+
+通達・タックスアンサー・質疑応答事例・判例は `verify_citations` の対象外で、houki-nta-mcp の取得ツールが返した `docId` と `sourceUrl` をそのまま citation に書く。
+
 ## 階層ラベルと出典の対応表
 
 | Citation の見出し | 出典 MCP | `legal_status` の典型値 |

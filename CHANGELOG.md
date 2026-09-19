@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.10.0] - 2026-09-20
+
+**minor リリース** — citation を書き出す前に、法律・政令・省令の引用を houki-egov-mcp v0.11.0 の `verify_citations` でまとめて実在確認する手順を足しました。
+
+### 追加（`docs/CITATION.md`）
+
+- **「引用を書き出す前に確かめる (verify_citations)」**: `## Sources` を書く前に引用のリストを 1 回で渡す手順。`label` に citation の行の文字列を入れておくと、`results[]` の各件と各行が 1 対 1 で対応する
+- 判定ごとの扱いの表。`found` はそのまま書く、`ARTICLE_NOT_FOUND` / `LAW_NOT_FOUND` / `INVALID_ARTICLE_NUM` は citation から外して引き直す、`OUT_OF_SCOPE` は houki-nta-mcp に回して見出しも「行政解釈」「参考情報」に移す、`ambiguous` は `candidates[]` から選び直して推測で書かない
+- `summary.all_found` が true のときだけ「引用はすべて実在を確認した」と書いてよいこと、`verify_citations` は条文の実在だけを確かめていて主張を支えるかは判定していないこと
+- e-Gov に接続できず全体が `SOURCE_*` になったときは、引用を消さず「実在確認は未実施」と注記する
+
+### 更新（`SKILL.md`）
+
+- 鉄則 4 に、Sources を書き出す前の実在確認の 1 手を足した
+- 利用する MCP の表に `verify_citations`（v0.11.0 以上）を追加
+- 鉄則 5 のエラー表に、`verify_citations` の件ごとの `not_found` / `ambiguous` はツール全体のエラーではないことを追加
+
+### 前提の版
+
+- houki-egov-mcp v0.11.0 以上で `verify_citations` が使える。それより前の版では鉄則 4 の実在確認の手は飛ばし、これまでどおり citation を書く
+
 ## [0.9.0] - 2026-09-19
 
 **minor リリース** — feasibility-check の ⑤（委任先へ下りる）を、houki-egov-mcp v0.10.1 の `get_related_laws` → `get_article_references` → `get_law` の 3 手に書き直しました。ほかのステップは変わりません。
