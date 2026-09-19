@@ -13,12 +13,12 @@
   - ⑦ 回答は「仕様の要素 × 触れる条文 × 条文が求めること × 委任先 × 通達・Q&A (`legal_status`) × 施行日 × 未確認」の表。**「適法です」「問題ありません」は返さない** (自己の事務なので進めてよいが、可否に答えた時点で当てはめになる)
   - houki-nta-mcp の基本通達 4 種に電子帳簿保存法の取扱通達が無いことを書き、無いときは「対象外」と答えて国税庁の URL を案内する
 - **SKILL.md「典型ワークフロー」に「問いの形 → workflow」の表**: 利用者が名乗る立場 (エンジニア / 納税者本人 / MCP を組む開発者) ではなく、問いの形で選ぶ。同じ人の問いが途中で別の行に移ったら行を変える。MCP を組み込む開発者には workflow ではなく `docs/ARCHITECTURE.md` / `ERROR-CODES.md` / `tools/list` を案内する
-- **SKILL.md の `description` と「いつこの skill を使うか」**: 「この仕様は法令のどこに触れるか」「この機能の法令上の要件は」で発火するようにした
+- **SKILL.md の `description` と「いつこの skill を使うか」**: 「この仕様は法令のどこに触れるか」「この機能の法令上の要件は」でも発火するようにした。`description` の先頭は「全法規を横断調査する Skill」のままにし、問いの形を 4 つ並べる形にした (先頭を実装前の確認に絞ると、通達の根拠や個別の事案の問いで発火しなくなるため。README や marketplace の「入口の 1 行」とは役割が違う)
 
 ### 更新
 
 - `workflows/README.md` と `examples/README.md` の一覧に feasibility-check を足した。`electronic-bookkeeping.md` (予定) の関連 workflow を tax-research から feasibility-check に変えた
-- `.claude-plugin/plugin.json` の `description` の先頭を、houki-hub family で決めた仕事の 1 行にした (houki-hub#22 の (c))
+- `.claude-plugin/plugin.json` の `description` に、問いの形ごとの手順 (実装前の確認 / 通達から根拠条文へ / 改正はいつから) と「法律で決まっている」と「通達でそうなっている」を混ぜないことを足した (houki-hub#22 の (c))
 
 ### 背景
 
