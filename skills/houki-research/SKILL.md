@@ -223,7 +223,7 @@ houki-nta-mcp が v0.16.x 以前だと `index_status` は付かない。その�
 | MCP / パッケージ                   | 役割                                                            | 主な tool                                                               |
 | ---------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `@shuji-bonji/houki-abbreviations` | 略称辞書 (全分野の法令、npm package、各 MCP に内蔵)             | (`resolve_abbreviation` 経由)                                           |
-| `@shuji-bonji/houki-egov-mcp`      | 法律・政令・省令の本文・検索 (全分野)                           | `search_law` / `get_law` / `get_toc` / `search_fulltext` (要ローカル DB) / `get_law_revisions` |
+| `@shuji-bonji/houki-egov-mcp`      | 法律・政令・省令の本文・検索 (全分野)                           | `search_law` / `get_law` / `get_toc` / `search_fulltext` (要ローカル DB) / `get_law_revisions` / `get_related_laws` / `get_article_references` (v0.10.0 以上) |
 | `@shuji-bonji/houki-nta-mcp`       | 国税庁の通達・改正・文書回答・QA・タックスアンサー (税務に特化) | `nta_search_*` / `nta_get_*` / `nta_inspect_pdf_meta`                   |
 | `@shuji-bonji/pdf-reader-mcp`      | 添付 PDF 本文抽出 (汎用)                                        | `read_text` (`split_columns` / `compact_whitespace`) / `extract_tables` |
 

@@ -36,8 +36,8 @@ sequenceDiagram
     E-->>S: 法令名 + law_id
     S->>E: ④ 条文を取る（get_toc → get_law）
     E-->>S: 条・項・号の本文
-    S->>E: ⑤ 委任先へ下りる（「政令で定める」「省令で定める」→ search_law law_type 指定 → get_law）
-    E-->>S: 施行令・施行規則の条
+    S->>E: ⑤ 委任先へ下りる（get_related_laws → get_article_references → get_law）
+    E-->>S: 施行令・施行規則の law_id、委任先の法令、条が引いている参照
     opt 税に関わる仕様
         S->>N: ⑤' 通達・Q&A・タックスアンサー（legal_status 付き）
         N-->>S: 通達 + next_actions で法律本文へ
@@ -102,9 +102,58 @@ sequenceDiagram
 
 法律の条文に「政令で定める」「財務省令で定める」「厚生労働省令で定める」「別表」とあれば、要件の実体はそこにある。**法律の条だけで止めると、保存期間や記載事項のような数字が抜ける**。
 
-③ の `search_fulltext` にローカル DB があると、法律の条と施行規則の条が同じ検索で両方当たることが多い（見出しが同じ「（電子取引の取引情報に係る電磁的記録の保存）」で並ぶ）。当たっていればそのまま `get_law` で取る。
+houki-egov-mcp v0.10.1 以上には、委任先へ下りるためのツールが 2 つある。**3 手で下りる**。
 
-houki-egov-mcp v0.6.x には委任先を自動で辿るツールが無い（houki-egov-mcp#20 で予定）。③ で見つかっていなければ、名称の規則と `law_type` で引く。
+```mermaid
+flowchart LR
+  A["get_related_laws<br/>{ law_name }"] -->|"related[] の law_id"| B["get_article_references<br/>{ law_name, article }"]
+  B -->|"delegations[].target_law<br/>references[]"| C["get_law<br/>next_actions[].example をそのまま渡す"]
+  C -->|"施行規則の条にも「法第N条」「第二条第六項第五号」がある"| B
+```
+
+| 手 | 呼ぶ tool | 見るフィールド | 意味 |
+|---|---|---|---|
+| 1 | `get_related_laws { "law_name": "<法律名>" }` | `related[]`（`relation` / `title` / `law_id` / `abbr`）、`not_found[]` | 法律名の末尾に「施行令」「施行規則」を付けた名前で e-Gov に実在するものだけが返る。`not_found` に候補が残っていれば、その名前の下位法令は無い |
+| 2 | `get_article_references { "law_name": "<法律名>", "article": "<条>" }` | `delegations[]`（`raw` / `count` / `target_law`）、`references[]`、`coverage.note` | 「政令で定める」「財務省令で定める」が何回あり、どの施行令・施行規則を指すか（**法令単位**。条は決めない）。他法令・同一法令内の参照は `references[]` に条・項・号付きで入る |
+| 3 | `get_law`（`next_actions[].example` をそのまま渡す） | 本文 | 引用先の条を取る。`example` は引数だけなので、そのまま渡せる |
+
+```jsonc
+{ "tool": "get_related_laws", "args": { "law_name": "電帳法" } }
+// → related: [ { relation: "enforcement_order", law_id: "503CO0000000128", title: "…法律施行令" },
+//              { relation: "enforcement_rule",  law_id: "410M50000040043", title: "…法律施行規則" } ]
+{ "tool": "get_article_references", "args": { "law_name": "電帳法", "article": "7" } }
+// → references: []（7 条は他の条を引いていない）
+//   delegations: [ { raw: "財務省令で定める", count: 1, target_law: { title: "…法律施行規則", law_id: "410M50000040043" } } ]
+//   next_actions: [ { action: "search_fulltext", example: { keyword: "…法律施行規則 法第七条" } } ]
+```
+
+委任先の **条** は 2 つの方法で探す。ローカル DB があれば `next_actions` の `search_fulltext`（施行規則の本文で「法第七条」を引いている条が当たる）、無ければ `get_toc { "law_name": "<施行規則名>" }` で見出し（「（電子取引の取引情報に係る電磁的記録の保存）」のように法律の条と同じ見出しが付く）から当たりを付ける。
+
+**規則の条が、さらに同じ規則の別の条を準用していることがある**（電帳法施行規則 4 条 1 項が 2 条 2 項 2 号と 6 項 5 号を準用する、など。二段目の委任）。施行規則の条に対しても `get_article_references` を呼ぶと、準用先が `references[]` に入る。
+
+```jsonc
+{ "tool": "get_article_references", "args": { "law_name": "…法律施行規則", "article": "4", "paragraph": 1 } }
+// → references: [
+//     { kind: "external", raw: "法第七条", law_name: "…法律", law_id: "410AC0000000025", article: "7" },   // 「法」は親の法律に解決される
+//     { kind: "internal", raw: "第二条第二項第二号", article: "2", paragraph: 2, item: "2" },
+//     { kind: "internal", raw: "第六項第五号", article: "2", paragraph: 6, item: "5", article_from: "第二条第二項第二号" },
+//     { kind: "relative", raw: "同項第六号", resolved: false }, …
+//   ]
+//   next_actions: [ { action: "get_law", example: { law_name: "…法律施行規則", article: "2", paragraph: 6, item: "5" } }, … ]
+```
+
+`references[].kind` の読み方:
+
+| `kind` | 意味 | 扱い |
+|---|---|---|
+| `external`（`resolved: true`） | 他法令の条。`law_id` 付き。施行令・施行規則の本文の「法第N条」は親の法律に解決されている | `next_actions` の `get_law` で取る |
+| `external`（`resolved: false`） | 法令名の候補（`law_name`）は切り出せたが、e-Gov に完全一致する名前が無かった | 「未確認」に書く。`law_name` を `search_law` で探し直してもよい |
+| `internal` | 同一法令内の条・項・号。`article_from` があるときは、「第二条第二項第二号及び第六項第五号」の後半のように直前の参照の条を引き継いだもの | `next_actions` の `get_law` で取る |
+| `relative` | 「前項」「同条第六項第五号」「同法第N条」。**解決されない** | 本文を読んで指す先を決める。取るなら自分で `get_law` の引数を組む |
+
+`coverage.note` が付いていることを前提に読む。**取れた参照だけが返る**ので、`references` が空でも「この条は他の条を引いていない」とは言い切らず、本文で確かめる。取らなかったものは「未確認」に書く。
+
+houki-egov-mcp が v0.10.0 より前のときは、上の 2 ツールが無い（`UNKNOWN_TOOL`）。名称の規則と `law_type` で引く。
 
 | 条文の語 | 引き方 |
 |---|---|
@@ -112,9 +161,7 @@ houki-egov-mcp v0.6.x には委任先を自動で辿るツールが無い（houk
 | 〜省令で定める | `search_law { "keyword": "<法律名>", "law_type": "MinisterialOrdinance" }` → 「<法律名>施行規則」 |
 | 別表 / 様式 | `get_toc` で別表の位置を確認してから `get_law` |
 
-施行令・施行規則の条は「法第○条第○項に規定する〜」の形で法律の条を指しているので、法律側の条番号で `search_fulltext { "keyword": "<施行規則名> 第7条" }` のように絞ると早い。
-
-**規則の条が、さらに同じ規則の別の条を準用していることがある**（電帳法施行規則 4 条 1 項が 2 条 2 項 2 号と 6 項 5 号を準用する、など。二段目の委任）。準用先も `get_law` で取る。取らなかったものは「未確認」に書く。
+別表・様式は v0.10.x でも `get_article_references` の対象外なので、`get_toc` で探す。
 
 #### ⑤': 税に関わる仕様のとき
 
@@ -164,11 +211,13 @@ houki-nta-mcp v0.18.x の基本通達は消基通・所基通・法基通・相�
 
 ## 例
 
-[`../examples/electronic-bookkeeping.md`](../examples/electronic-bookkeeping.md) — 「メールで届いた領収書の PDF を保存する機能」を題材にした実測（2026-09-19、egov 0.6.1 / nta 0.18.1）。電帳法 7 条 → 施行規則 4 条 → 準用先の 2 条 6 項 5 号 → 法人税法施行規則 59 条（保存期間）→ 2027-01-01 施行の未施行改正、まで 12 回の呼び出しで揃える。
+[`../examples/electronic-bookkeeping.md`](../examples/electronic-bookkeeping.md) — 「メールで届いた領収書の PDF を保存する機能」を題材にした実測（2026-09-19、egov 0.6.1 / nta 0.18.1）。電帳法 7 条 → 施行規則 4 条 → 準用先の 2 条 6 項 5 号 → 法人税法施行規則 59 条（保存期間）→ 2027-01-01 施行の未施行改正、まで 12 回の呼び出しで揃える。同じ ⑤ を egov 0.10.1 の `get_related_laws` / `get_article_references` で通した再実測を末尾に置いた。
 
 ## アンチパターン
 
 - ❌ 法律の条だけで止める → 保存期間・記載事項・要件の実体は施行規則にある。⑤ を飛ばさない
+- ❌ `get_article_references` の `references` が空だから「他の条を引いていない」と書く → 正規表現で取れた範囲だけが返る（`coverage.note`）。本文で確かめる
+- ❌ `relative`（「前項」「同条第六項第五号」）を解決済みとして citation に書く → `resolved: false`。指す先は本文を読んで決め、決められなければ「未確認」
 - ❌ 探した語を回答に書かない → 利用者が探し漏れに気づけない。設計語と法令語の置き換えは LLM の推測なので、必ず見せる
 - ❌ 「適法です」「問題ありません」と書く → 当てはめ。応答型の「返さないもの」
 - ❌ 通達の要件を法律の要件と同じ行に書く → `legal_status` が消える。別の列か別の行にする

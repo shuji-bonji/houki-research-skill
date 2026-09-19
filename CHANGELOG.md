@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.0] - 2026-09-19
+
+**minor リリース** — feasibility-check の ⑤（委任先へ下りる）を、houki-egov-mcp v0.10.1 の `get_related_laws` → `get_article_references` → `get_law` の 3 手に書き直しました。ほかのステップは変わりません。
+
+### 更新（`workflows/feasibility-check.md`）
+
+- ⑤: 施行令・施行規則は `get_related_laws` で引く（名前の規則で作った候補のうち e-Gov に実在するものだけが `related[]` に、無かった候補は `not_found[]` に入る）。条文の「政令で定める」「財務省令で定める」がどの下位法令を指すかは `get_article_references` の `delegations[].target_law`（法令単位。条は決めない）。条は `next_actions` の `search_fulltext`（ローカル DB）か `get_toc` の見出しで探す
+- ⑤: 施行規則の条に `get_article_references` を当てると、準用先（二段目の委任）が `references[]` に `get_law` の引数の形で入る。「法第N条」は親の法律に解決される。「第二条第二項第二号及び第六項第五号」の後半は `article_from` 付きで 2 条の項になる（egov 0.10.1 以上）
+- ⑤: `references[].kind` の読み方の表。`relative`（「前項」「同条第六項第五号」）は解決されないので、本文を読んで指す先を決める。`resolved: false` の `external` は「未確認」に書く
+- ⑤: egov が v0.10.0 より前のときの手順（`law_type` 指定の `search_law`）は残した
+- アンチパターンに 2 つ追加（`references` が空でも「引いていない」と書かない / `relative` を解決済みとして citation に書かない）
+- `examples/electronic-bookkeeping.md` の末尾に、⑤ を egov 0.10.1 で通し直した再実測を追加
+
+### 前提の版
+
+- houki-egov-mcp v0.10.1 以上で ⑤ の 3 手が使える（0.10.0 では「第六項第五号」を 4 条の項として返す）。それより前でも動作はする
+
 ## [0.8.1] - 2026-09-19
 
 **patch リリース** — feasibility-check を実際の問いで 1 回通し、その記録を `examples/electronic-bookkeeping.md` に置きました。通してみて分かったことを手順書に 4 点戻しています。手順の骨は v0.8.0 と同じです。
