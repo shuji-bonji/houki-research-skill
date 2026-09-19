@@ -1,6 +1,6 @@
 ---
 name: houki-research
-description: 日本の **全法規 (法律・政令・省令・通達・判例・裁決・行政解釈)** を横断調査するときに使う Skill。`houki-hub` MCP family を組み合わせ、「法律本文 → 政令・省令 → 通達 → 改正履歴 → 添付 PDF → 判例・裁決」の階層を縦串で引用する流れを誘導する。業法独占規定 (税理士法 52 条 / 弁護士法 72 条 / 司法書士法 3 条 / 社労士法 27 条) への配慮と citation 標準化も担う。税務・労務・登記・法律事務など分野を問わず、日本の法令文献調査が必要になったときに最初に呼び出す。
+description: 実装する前に、その仕様が法令のどこに触れるかを条文で確かめるための Skill。日本の **全法規 (法律・政令・省令・通達・判例・裁決・行政解釈)** を `houki-hub` MCP family で横断し、「法律本文 → 政令・省令 → 通達 → 改正履歴 → 添付 PDF → 判例・裁決」の階層を縦串で引用する流れを誘導する。「この仕様は法令のどこに触れるか」「この機能の法令上の要件は」「この取扱いの根拠と、今も有効か」「この改正はいつから」のような問いで呼び出す。業法独占規定 (税理士法 52 条 / 弁護士法 72 条 / 司法書士法 3 条 / 社労士法 27 条) への配慮と citation 標準化も担う。税務・労務・登記・法律事務など分野を問わず、日本の法令文献調査が必要になったときに最初に呼び出す。
 ---
 
 # houki-research
@@ -27,6 +27,7 @@ description: 日本の **全法規 (法律・政令・省令・通達・判例�
 
 ユーザーの問いが以下のいずれかに該当するときに、この skill を呼び出して **回答前に** 行動方針を整える:
 
+- **実装する前に、その仕様が法令のどこに触れるか** を条文で確かめたい場面 (保存期間・記載事項・同意の取り方・届出の要否など。[`workflows/feasibility-check.md`](workflows/feasibility-check.md))
 - 日本の **法令本文・通達・判例・裁決・行政解釈** に関する質問 (分野不問)
 - **税務 / 労務 / 登記 / 民事 / 会社法 / 知財 / 環境** など、各種法令の制度の現状・改正履歴
 - **略称が含まれる質問** (税務系: 「消基通」「インボイス」、労務系: 「労基法」「均等法」、民事系: 「民訴」「民執」 等)
@@ -255,8 +256,20 @@ flowchart TB
 
 ## 典型ワークフロー
 
+workflow は **問いの形** で選ぶ。利用者が名乗る立場 (エンジニア / 納税者本人 / MCP を組む開発者) では選ばない。同じ人の問いが途中で別の行に移ることがあり、そのときは行を変える。
+
+| 問いの形 | workflow | 業法の線 |
+| --- | --- | --- |
+| この仕様は法令のどこに触れるか / この機能の法令上の要件は | [`workflows/feasibility-check.md`](workflows/feasibility-check.md) | 自己の事務。触れる条文と要件まで返し、「適法か」は返さない |
+| この取扱いの根拠と、今も有効か (通達・Q&A から入る) | [`workflows/tax-research.md`](workflows/tax-research.md) | 一般的解釈まで。`next_actions` で法律本文へ戻る |
+| 私の場合はどうなるか (個別の事案) | 鉄則 1 の応答型 (返すもの / 返さないもの) | **ここが線。** 条文・通達・論点までを返し、結論・可否・金額は返さない |
+| この改正はいつから、何が変わるか | `workflows/revision-tracking.md` (予定。それまでは `get_law_revisions` と tax-research の ⑤〜⑦) | 線に近づかない |
+
+MCP を組み込む開発者は問いを投げる利用者ではなく、契約を読む利用者なので workflow は要らない。[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) / [`docs/ERROR-CODES.md`](docs/ERROR-CODES.md) / 各 MCP の `tools/list` の `inputSchema` を参照する。
+
 具体的なユースケースは [`workflows/`](workflows/) を参照:
 
+- [`workflows/feasibility-check.md`](workflows/feasibility-check.md) — 実装前に、仕様が法令のどこに触れるかを条文で確かめる (法律 × 委任先 × 施行日)
 - [`workflows/tax-research.md`](workflows/tax-research.md) — 税務リサーチの基本フロー (法律 × 通達 × 改正)
 - [`examples/invoice-registration.md`](examples/invoice-registration.md) — 「インボイス制度の登録番号」の具体例 (happy path)
 - [`examples/error-recovery-patterns.md`](examples/error-recovery-patterns.md) — 3 MCP 横断のエラー応答からの回復パターン (5 シナリオ)

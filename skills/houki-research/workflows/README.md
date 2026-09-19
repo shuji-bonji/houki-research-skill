@@ -1,6 +1,6 @@
 # Workflows
 
-`houki-research-skill` が想定する **横断 orchestration の典型ワークフロー**。分野ごとに 1 ファイルずつ。
+`houki-research-skill` が想定する **横断 orchestration の典型ワークフロー**。**問いの形** ごとに 1 ファイルずつ (分野で分けるものもある)。利用者の立場では分けない。
 
 ## スコープ
 
@@ -8,9 +8,10 @@
 
 ## 一覧
 
-| ファイル | 分野 | 主に使う MCP | 状態 |
+| ファイル | 問いの形 / 分野 | 主に使う MCP | 状態 |
 |---|---|---|---|
-| [`tax-research.md`](tax-research.md) | 税務リサーチ | houki-egov + houki-nta + pdf-reader | ✅ 利用可能 |
+| [`feasibility-check.md`](feasibility-check.md) | 実装前に、仕様が法令のどこに触れるか (分野不問) | houki-egov (+ 税なら houki-nta) | ✅ 利用可能 |
+| [`tax-research.md`](tax-research.md) | 税務リサーチ (通達・Q&A から根拠条文へ) | houki-egov + houki-nta + pdf-reader | ✅ 利用可能 |
 | `revision-tracking.md` | 改正履歴の追跡 (分野不問) | houki-egov + houki-nta + pdf-reader | 📅 (税務 / 労務などで具体化次第) |
 | `labor-research.md` | 労務 (労基法・社会保険) | houki-egov + houki-mhlw-mcp (計画中) | 📅 houki-mhlw-mcp 完成後 |
 | `civil-research.md` | 民事 (民法・民訴・民執) | houki-egov + houki-court-mcp (構想中) | 💭 houki-court-mcp 完成後 |
