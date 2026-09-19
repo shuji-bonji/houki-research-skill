@@ -12,7 +12,7 @@
 |---|---|---|---|
 | [`invoice-registration.md`](invoice-registration.md) | 税務 (インボイス制度・登録番号) | [`../workflows/tax-research.md`](../workflows/tax-research.md) | ✅ |
 | [`error-recovery-patterns.md`](error-recovery-patterns.md) | 横断 (3 MCP のエラー応答→Skill フォールバック) | (横断) | ✅ |
-| `electronic-bookkeeping.md` | 税務 (電子帳簿保存法) | tax-research | 📅 (実利用で追加) |
+| `electronic-bookkeeping.md` | 実装前の確認 (電子帳簿保存法の電子取引を PDF で保存する仕様) | [`../workflows/feasibility-check.md`](../workflows/feasibility-check.md) | 📅 (実測で追加) |
 | `inheritance-tax-revision.md` | 税務 (相続税法の改正追跡) | tax-research / revision-tracking | 📅 |
 | `working-hours-cap.md` | 労務 (時間外労働の上限規制) | labor-research | 📅 houki-mhlw-mcp 完成後 |
 | `civil-procedure-revision.md` | 民事 (民訴法 IT 化改正) | civil-research | 💭 houki-court-mcp 完成後 |

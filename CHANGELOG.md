@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.8.0] - 2026-09-19
+
+**minor リリース** — 「実装する前に、その仕様が法令のどこに触れるかを条文で確かめる」問いのための workflow を足し、workflow を問いの形で選ぶ表を SKILL.md に置きました。既存の手順 (tax-research・鉄則・citation) は変わりません。
+
+### 追加
+
+- **`workflows/feasibility-check.md`**: 仕様の各要素が、どの法令のどの条に触れ、その条は何を求めているかを、条文・委任先 (施行令・施行規則)・施行日まで揃えて返す手順。7 ステップ
+  - ② 仕様の語を法令の語に置き換える工程を明示し、**探した語と探せなかった語を回答に残す**ことを要件にした。設計語と法令語の置き換えは LLM の推測なので、見せないと利用者が探し漏れに気づけない
+  - ⑤ 委任先へ下りる工程。法律の条に「政令で定める」「〜省令で定める」があれば、`search_law` に `law_type: "CabinetOrder"` / `"MinisterialOrdinance"` を付けて施行令・施行規則を引く。houki-egov-mcp に委任先を辿るツールが無い間 (houki-egov-mcp#20 で予定) の手順
+  - ⑥ `get_law_revisions` で `current_revision_status: "UnEnforced"` (公布済み未施行) を見る。実装が稼働するのは数か月先なので、現行だけでは足りない
+  - ⑦ 回答は「仕様の要素 × 触れる条文 × 条文が求めること × 委任先 × 通達・Q&A (`legal_status`) × 施行日 × 未確認」の表。**「適法です」「問題ありません」は返さない** (自己の事務なので進めてよいが、可否に答えた時点で当てはめになる)
+  - houki-nta-mcp の基本通達 4 種に電子帳簿保存法の取扱通達が無いことを書き、無いときは「対象外」と答えて国税庁の URL を案内する
+- **SKILL.md「典型ワークフロー」に「問いの形 → workflow」の表**: 利用者が名乗る立場 (エンジニア / 納税者本人 / MCP を組む開発者) ではなく、問いの形で選ぶ。同じ人の問いが途中で別の行に移ったら行を変える。MCP を組み込む開発者には workflow ではなく `docs/ARCHITECTURE.md` / `ERROR-CODES.md` / `tools/list` を案内する
+- **SKILL.md の `description` と「いつこの skill を使うか」**: 「この仕様は法令のどこに触れるか」「この機能の法令上の要件は」で発火するようにした
+
+### 更新
+
+- `workflows/README.md` と `examples/README.md` の一覧に feasibility-check を足した。`electronic-bookkeeping.md` (予定) の関連 workflow を tax-research から feasibility-check に変えた
+- `.claude-plugin/plugin.json` の `description` の先頭を、houki-hub family で決めた仕事の 1 行にした (houki-hub#22 の (c))
+
+### 背景
+
+houki-hub#22 の (c) で、family の入口の 1 行を「実装する前に、その仕様が法令のどこに触れるかを条文で確かめる」に決めた。名前に掲げた問いの形に対応する手順書が無かったので、この版で足した。利用者ごとの違いを MCP ではなく Skill の workflow に置く方針 (houki-hub の `docs/notes/2026-09-19-job-name-and-listing.md` §8) の最初の実装。
+
 ## [0.7.0] - 2026-09-14
 
 **minor リリース** — この skill を入れると、前提の MCP 2 つ (`houki-egov-mcp` / `houki-nta-mcp`) も一緒に入るようにしました。手順そのものは v0.6.0 と同じです。

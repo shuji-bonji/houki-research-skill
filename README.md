@@ -177,8 +177,9 @@ houki-research-skill/
 │       │   ├── CITATION.md         # citation 標準フォーマット
 │       │   ├── ERROR-CODES.md      # family 共通エラー語彙
 │       │   └── ERROR-HANDLING.md   # エラー解釈ポリシー
-│       ├── workflows/              # 横断 orchestration の典型ワークフロー
-│       │   └── tax-research.md
+│       ├── workflows/              # 横断 orchestration の典型ワークフロー (問いの形ごと)
+│       │   ├── feasibility-check.md   # 実装前に、仕様が法令のどこに触れるか
+│       │   └── tax-research.md        # 通達・Q&A から根拠条文へ
 │       └── examples/               # LLM 向け few-shot
 │           ├── invoice-registration.md
 │           └── error-recovery-patterns.md
