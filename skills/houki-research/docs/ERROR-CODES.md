@@ -73,6 +73,7 @@ interface FamilyErrorContract {
 | ------------------------ | ----------------------------------- | --------- | ------------------------------ |
 | `LAW_NOT_FOUND`          | 指定された法令が見つからない        | `false`   | houki-egov-mcp / houki-nta-mcp |
 | `ARTICLE_NOT_FOUND`      | 条/項/号が見つからない              | `false`   | houki-egov-mcp                 |
+| `RANGE_NOT_FOUND`        | 指定された編・章・節、または附則の番号が見つからない (範囲取得。egov 0.14.0+ の `get_law_range`) | `false`   | houki-egov-mcp                 |
 | `ABBREVIATION_NOT_FOUND` | 略称辞書に該当なし                  | `false`   | houki-abbreviations 内蔵側     |
 | `TSUTATSU_NOT_FOUND`     | 通達が見つからない                  | `false`   | houki-nta-mcp                  |
 | `DOC_NOT_FOUND`          | 文書 (添付 PDF 含む) が見つからない | `false`   | houki-nta-mcp / pdf-reader-mcp |
