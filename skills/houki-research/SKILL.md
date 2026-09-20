@@ -184,6 +184,8 @@ houki-nta-mcp が v0.16.x 以前だと `index_status` は付かない。その�
 
 回答の末尾に **「Sources:」** セクションを設け、各情報の階層を必ず示す。詳細は [`docs/CITATION.md`](docs/CITATION.md)。
 
+書き出す前に、法律・政令・省令の引用を `verify_citations` にまとめて渡して実在を確かめる (houki-egov-mcp v0.11.0 以上)。`summary.all_found` が true のときだけ「引用はすべて実在を確認した」と書ける。`not_found` の件は citation から外して引き直し、`ambiguous` の件は `candidates[]` から選び直す。判定ごとの扱いは [`docs/CITATION.md` の「引用を書き出す前に確かめる」](docs/CITATION.md#引用を書き出す前に確かめる-verify_citations)。
+
 ```markdown
 ## Sources
 
@@ -215,6 +217,7 @@ houki-nta-mcp が v0.16.x 以前だと `index_status` は付かない。その�
 | `SOURCE_RATE_LIMITED`                   | 当該セッションで同種呼び出しを停止         |
 | `INVALID_PDF` / `ENCRYPTED_PDF`         | HTML 版や別添付に切替、citation に注記     |
 | `INVALID_ARGUMENT`                      | `detail.issues[].path` の引数を直して呼び直す。ユーザーに見せない |
+| `verify_citations` の件ごとの `not_found` / `ambiguous` | ツール全体のエラーではない。`results[]` の件ごとに扱う ([`docs/CITATION.md`](docs/CITATION.md#引用を書き出す前に確かめる-verify_citations))。`not_found` の引用は citation から外し、`ambiguous` は `candidates[]` から選び直す |
 
 ## 利用する MCP ファミリー
 
@@ -223,7 +226,7 @@ houki-nta-mcp が v0.16.x 以前だと `index_status` は付かない。その�
 | MCP / パッケージ                   | 役割                                                            | 主な tool                                                               |
 | ---------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `@shuji-bonji/houki-abbreviations` | 略称辞書 (全分野の法令、npm package、各 MCP に内蔵)             | (`resolve_abbreviation` 経由)                                           |
-| `@shuji-bonji/houki-egov-mcp`      | 法律・政令・省令の本文・検索 (全分野)                           | `search_law` / `get_law` / `get_toc` / `search_fulltext` (要ローカル DB) / `get_law_revisions` / `get_related_laws` / `get_article_references` (v0.10.0 以上) |
+| `@shuji-bonji/houki-egov-mcp`      | 法律・政令・省令の本文・検索 (全分野)                           | `search_law` / `get_law` / `get_toc` / `search_fulltext` (要ローカル DB) / `get_law_revisions` / `get_related_laws` / `get_article_references` (v0.10.0 以上) / `verify_citations` (v0.11.0 以上) |
 | `@shuji-bonji/houki-nta-mcp`       | 国税庁の通達・改正・文書回答・QA・タックスアンサー (税務に特化) | `nta_search_*` / `nta_get_*` / `nta_inspect_pdf_meta`                   |
 | `@shuji-bonji/pdf-reader-mcp`      | 添付 PDF 本文抽出 (汎用)                                        | `read_text` (`split_columns` / `compact_whitespace`) / `extract_tables` |
 
