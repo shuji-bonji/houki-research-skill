@@ -174,13 +174,33 @@ flowchart LR
 
 `coverage.note` が付いていることを前提に読む。**取れた参照だけが返る**ので、`references` が空でも「この条は他の条を引いていない」とは言い切らず、本文で確かめる。取らなかったものは「未確認」に書く。
 
+#### 別表・様式が図のとき (houki-egov-mcp v0.15.0 以上)
+
+別表・様式・別記の中身が図 (jpg / pdf) のとき、`get_law` / `get_law_range` の Markdown には入らない (e-Gov の XML で `Fig` 要素になっている部分)。届書の書式や記載欄、旗の寸法図のように **図そのものが要件の実体** のときは、次の 2 手で取る。
+
+| 手 | 呼ぶ tool | 見るフィールド |
+|---|---|---|
+| 1 | `list_attachments { "law_name": "<法令名>" }` | `attachments[]` の `location.title`（「別表第一」「附録第十一号様式」）と `location.related_article`（「（第五十九条関係）」）で目当ての図を選び、その `url` を取る |
+| 2 | pdf なら pdf-reader-mcp の `read_url { "url": "<attachments[].url>" }`。ディスクに置くなら `get_attachment { "law_name", "src": "<attachments[].src>", "save": true }` → `saved.path` を `read_text` に渡す | 図の本文 |
+
+```jsonc
+{ "tool": "list_attachments", "args": { "law_name": "戸籍法施行規則" } }
+// → count: 42, attachments: [ …, { src: "./pict/2FH00000076885.pdf", file_type: "pdf",
+//     url: "https://laws.e-gov.go.jp/api/2/attachment/322M40000010094_20260626_508M60000010043?src=…",
+//     location: { tag: "AppdxStyle", title: "附録第十一号様式", related_article: "出生の届書（日本産業規格Ａ列四番）（第五十九条関係）" } }, … ]
+```
+
+`url` は認証なしで開ける。`count: 0` なら、その法令の別表・様式は文字列で書かれているので `get_toc` → `get_law` で読める。図は法令履歴ごとに付くので、`at` を付けたときは `list_attachments` にも同じ `at` を渡す。citation には `location.title` と関係条文を書き、「図を読んだ」ことが分かるようにする。
+
+法令全体を Word や HTML で手元に置きたいときだけ `get_law_file { "law_name", "file_type": "docx", "save": true }`。条文を読むのに使う道ではない (民法の xml は 1.6 MB)。
+
 houki-egov-mcp が v0.10.0 より前のときは、上の 2 ツールが無い（`UNKNOWN_TOOL`）。名称の規則と `law_type` で引く。
 
 | 条文の語 | 引き方 |
 |---|---|
 | 政令で定める | `search_law { "keyword": "<法律名>", "law_type": "CabinetOrder" }` → 「<法律名>施行令」 |
 | 〜省令で定める | `search_law { "keyword": "<法律名>", "law_type": "MinisterialOrdinance" }` → 「<法律名>施行規則」 |
-| 別表 / 様式 | `get_toc` で別表の位置を確認してから `get_law` |
+| 別表 / 様式 | `get_toc` で別表の位置を確認してから `get_law`。図のときは v0.15.0 以上の `list_attachments`（上記） |
 
 別表・様式は v0.10.x でも `get_article_references` の対象外なので、`get_toc` で探す。
 

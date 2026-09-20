@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.12.0] - 2026-09-20
+
+**minor リリース** — houki-egov-mcp v0.15.0 の 3 ツール（`list_attachments` / `get_attachment` / `get_law_file`。別表・様式の図と、xml / json / html / rtf / docx の本文ファイル）を、family のツール一覧・エラーコードと `feasibility-check` の手順に置いた。
+
+### Added
+
+- **`workflows/feasibility-check.md` のステップ ⑤ に「別表・様式が図のとき」**: 別表・様式・別記の中身が図（jpg / pdf）のときは `get_law` の Markdown に入らない（e-Gov の XML の `Fig` 要素）。`list_attachments` で `location.title`（「附録第十一号様式」）と `related_article` から目当ての図を選び、`url` を pdf-reader-mcp の `read_url` に渡す、またはディスクに置くなら `get_attachment` の `save: true` → `saved.path` を `read_text` に渡す、の 2 手。呼び出し例の数値は houki-egov-mcp v0.15.0 の実測（戸籍法施行規則は 42 件、附録第十一号様式 = 出生の届書）
+- **`docs/ERROR-CODES.md` の「リソース未発見」**: `ATTACHMENT_NOT_FOUND`（指定の `src` がその履歴に無い、添付が 1 件も無い、e-Gov の `/attachment` が code 404003 を返した。`retryable: false`、houki-egov-mcp 0.15.0+）。`list_attachments` で添付が無い法令は `count: 0` の成功応答でエラーにならないことも書いた
+
+### Changed
+
+- **`SKILL.md` の family ツール表**: houki-egov-mcp のツールに `list_attachments` / `get_attachment` / `get_law_file`（v0.15.0 以上）を足した
+- **`feasibility-check` の v0.10.0 未満の表**: 「別表 / 様式」の行に、図のときは v0.15.0 以上の `list_attachments` を使うことを添えた
+- **`README.md` の対応版**: houki-egov-mcp の欄に「別表・様式の図を `list_attachments` で取るのは v0.15.0 以上」を足した
+
+### なぜ手順に入れたか
+
+「別表」「様式」は ⑤ の委任先として挙げていたが、中身が図の法令（戸籍法施行規則の届書、国旗国歌法の旗の寸法）では `get_toc` → `get_law` で読めるのは見出しまでで、要件の実体（記載欄・寸法）が取れなかった。図の一覧と URL を返すツールが egov 側に入ったので、その手順を置いた。
+
 ## [0.11.0] - 2026-09-20
 
 **minor リリース** — 0.10.2 で保留した手順の書き換えを入れた。houki-egov-mcp v0.14.0 の `get_law_range`（編・章・節、または附則 1 本を範囲にした条文の取得）を、法律本文の入口の選び方と `feasibility-check` の手順に置いた。
