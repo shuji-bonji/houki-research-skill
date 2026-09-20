@@ -96,7 +96,28 @@ sequenceDiagram
 { "tool": "get_law", "args": { "law_name": "電子計算機を使用して作成する国税関係帳簿書類の保存方法等の特例に関する法律", "article": "7" } }
 ```
 
-民法・会社法のような長い法令は、`get_law` を条の単位で呼ぶ。法令全体を取ってコンテキストに載せない。
+民法・会社法のような長い法令は、法令全体を取ってコンテキストに載せない。条が分かっているなら `get_law` を条の単位で呼び、**章・節を通して読む必要があるとき**は `get_law_range` を使う（houki-egov-mcp v0.14.0 以上）。
+
+```jsonc
+{ "tool": "get_toc", "args": { "law_name": "民法", "depth": 2 } }
+// → toc[2].children[1].path = "Part3/Chapter2"（第三編 債権 第二章 契約）
+{ "tool": "get_law_range", "args": { "law_name": "民法", "path": "Part3/Chapter2" } }
+// → 198 条のうち 186 条（第521条〜第684条、本文 29,911 文字）。range.truncated: true
+{ "tool": "get_law_range", "args": { "law_name": "民法", "path": "Part3/Chapter2", "from_article": "685" } }
+// → 続きの 12 条。range.next_from_article の値をそのまま渡す
+```
+
+使い分けの目安:
+
+| 読み方 | 呼ぶ tool |
+| --- | --- |
+| 要件を 1 条ずつ確かめる（条・項・号が分かっている） | `get_law` |
+| 章・節を通して読む（制度の組み立てを見る） | `get_law_range` |
+| どの条にあるか探す | `get_toc` か `search_fulltext` |
+
+`get_law_range` は既定で本文 30,000 文字までを条の単位で返す。民法の章はほとんどが 1 回で収まり、会社法・所得税法の大きい章は 2〜3 回に分かれる。`range.truncated` が `true` のときは `range.next_from_article` を `from_article` に渡して続きを取る。**`truncated: true` のまま「この章にはこれしか無い」と書かない。**
+
+章番号は編ごとに振り直される（民法には第一章が 5 つある）。`chapter` だけを渡して複数に当たると候補のパス付きで `INVALID_ARGUMENT` が返るので、`next_actions` の `path` を選び直す。
 
 ### ステップ ⑤: 委任先へ下りる
 
@@ -223,5 +244,6 @@ houki-nta-mcp v0.18.x の基本通達は消基通・所基通・法基通・相�
 - ❌ 通達の要件を法律の要件と同じ行に書く → `legal_status` が消える。別の列か別の行にする
 - ❌ `get_law_revisions` を省く → 施行待ちの改正を見落とす。実装が稼働するのは数か月先なので、現行だけ見ても足りない
 - ❌ `search_fulltext` が `api-fallback` のまま「本文に無かった」と答える → 本文検索ができていない。「法令名の一致で探した」と書き、`bulk_download_everything` を案内する
-- ❌ 民法・会社法を `get_law` で丸ごと取る → 応答が長すぎる。`get_toc` → 条の単位で
+- ❌ 民法・会社法を `get_law` で丸ごと取る → 応答が長すぎる。条が分かっていれば `get_law`、章・節を通して読むなら `get_law_range`
+- ❌ `get_law_range` の `range.truncated` が `true` なのに、返った条だけで「この章の規定はこれだけ」と書く → `range.next_from_article` を `from_article` に渡して続きを取る
 - ❌ houki-nta-mcp に無い通達（電帳法取扱通達など）を「通達は無い」と答える → 対象外なだけ。「houki-nta-mcp の対象外」と書いて国税庁の URL を案内する
