@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.14.1] - 2026-09-21
+
+**patch リリース** — `examples/invoice-registration.md` と `workflows/tax-research.md` のステップ ③ の例文を、houki-egov-mcp v0.15.1 で実際に呼んで返ったとおりに直した（#17）。
+
+### Fixed
+
+- **ステップ ③ の条の探し方**: `search_law { keyword: "適格請求書発行事業者の登録" }` は `total_count: 0` になる（`search_law` は法令名の検索で、条の見出しでは当たらない）。`search_fulltext { keyword: "消費税法 適格請求書発行事業者の登録" }` で 57 条の 2 を探してから `get_law` で本文を取る形にした。SKILL.md 鉄則 3 の表（「どの法令の何条か不明 → `search_fulltext` → `get_law`」）と同じ手順になった
+- **`get_law` の応答に無い `legal_status`**: 例文が `get_law` の応答に `legal_status (binds_citizens=true / binds_courts=true)` があると書いていたが、実際の応答は条文本文と `meta`（`law_id` / `title` / `law_num` / `retrieved_at` / `url`）だけ。法律の拘束力は `explain_law_type { name: "法律" }` の応答（`binds_citizens: true`、`hierarchy_rank: 2`。`binds_courts` は返さない）を根拠にする、と書き換えた。ステップ ⑧ の citation と `workflows/tax-research.md` のシーケンス図（`E-->>S: 条文 + legal_status`）も同じく直した
+- **ステップ ② の `resolve_abbreviation` の例文**: 「インボイス」は `formal: "適格請求書等保存方式"` ではなく消費税法の alias で、`resolved.formal: "消費税法"`、`source_mcp_hint: "houki-egov"`、`in_scope: false` が返る。実測どおりに直した
+
+### Changed
+
+- **例文に実測の版と日付を付けた**: ステップ ② ③ ④ の例文に「実測: houki-egov-mcp v0.15.1 / houki-nta-mcp v0.20.0（2026-09-21）」を付けた（houki-hub の `scripts/reference-examples` と同じ書き方）。回帰確認のときに Skill の例文も基準として使える
+
+### なぜ直したか
+
+ステップ ③ の例文は手順を示すために書かれたもので、その版で実際にそう返ったものではなかった。書いてあるとおりに呼ぶと `search_law` が 0 件になり、`get_law` の応答に無いフィールドを citation に書く手順になっていた（houki-hub#32 の「手順の確認」）。
+
 ## [0.14.0] - 2026-09-21
 
 **minor リリース** — houki-nta-mcp v0.20.0（#44）に合わせて、新旧対照表の記号の説明を実物の 2 通りに揃え、改正通達の「別紙 N」が本文の新旧対照表であることを手順に置いた。

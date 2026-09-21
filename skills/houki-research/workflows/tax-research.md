@@ -34,7 +34,7 @@ sequenceDiagram
     N-->>S: 解決結果
 
     S->>E: ③ 法律本文を取得 (法的根拠)
-    E-->>S: 条文 + legal_status
+    E-->>S: 条文 + meta (拘束力は explain_law_type で確かめる)
 
     S->>N: ④ 通達による解釈を取得
     N-->>S: 通達本文 + legal_status (binds_tax_office=true)<br/>+ base_laws + next_actions (v0.11.0+)
@@ -106,17 +106,23 @@ sequenceDiagram
   "tool": "get_toc",
   "args": { "law_name": "消費税法" }
 }
-// 法令名を探すとき（タイトル一致）
+// 法令名を探すとき（タイトル一致。条の見出しや本文の語では当たらない）
 {
   "tool": "search_law",
-  "args": { "keyword": "適格請求書発行事業者の登録" }
+  "args": { "keyword": "適格請求書" }
 }
+// → query.resolved: "消費税法"（略称辞書の alias で解決）。"適格請求書発行事業者の登録" のような条の見出しを渡すと total_count: 0
 // どの法令の何条か自体が不明なとき → 条文本文の横断検索（ローカル DB が必要）
 {
   "tool": "search_fulltext",
-  "args": { "keyword": "消費税法 適格請求書発行事業者 登録" }
+  "args": { "keyword": "消費税法 適格請求書発行事業者の登録" }
 }
+// → hits[0]: 消費税法 57の2「（適格請求書発行事業者の登録等）」（score_reasons に article_caption_match）
+//   hits[1]: 消費税法 附則(137) 44「（適格請求書発行事業者の登録等に関する経過措置）」
+//   実測: houki-egov-mcp v0.15.1（2026-09-21）
 ```
+
+`get_law` の応答は条文本文と `meta`（`law_id` / `title` / `law_num` / `retrieved_at` / `url`）で、`legal_status` は付かない。法律が国民を拘束すること（`binds_citizens: true`）は `explain_law_type { "name": "法律" }` の応答を根拠にする（houki-egov-mcp v0.15.1、2026-09-21 実測。`binds_courts` は返さない）。
 
 `search_fulltext` の応答で `source` が `"api-fallback"` なら本文検索は行われていない（`search_law` の結果が `fallback` に入っている）。その場合は `next_actions` の `bulk_download_everything`（`houki-egov-mcp --bulk-download-everything`）をユーザーに案内し、回答には「法令名の一致で探した」と書く。
 

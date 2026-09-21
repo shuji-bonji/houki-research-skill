@@ -18,17 +18,37 @@
 
 ```jsonc
 { "tool": "resolve_abbreviation", "args": { "abbr": "インボイス" } }
-// → { formal: "適格請求書等保存方式", source_mcp_hint: "houki-nta" / "houki-egov" }
+// → resolved: { abbr: "消法", formal: "消費税法", law_id: "363AC0000000108", source_mcp_hint: "houki-egov",
+//               aliases: ["消費税", "インボイス", "インボイス制度", "適格請求書", "適格請求書等保存方式", "適格請求書発行事業者", …] }
+//   in_scope: false, hint: "このエントリは houki-egov の管轄です。houki-egov-mcp で取得してください。"
+//   実測: houki-nta-mcp v0.20.0（2026-09-21）。「インボイス」は消費税法の alias で、正式名称は制度名ではなく法令名で返る
 ```
 
 ### ステップ ③: 法律本文を取得 (houki-egov-mcp)
 
+「消費税法のどの条か」が分からないので、条文本文の横断検索 `search_fulltext` で条を探してから `get_law` で本文を取る。`search_law` は法令名の検索なので、「適格請求書発行事業者の登録」のような条の見出しでは 0 件になる（`total_count: 0`）。
+
 ```jsonc
-{ "tool": "search_law", "args": { "keyword": "適格請求書発行事業者の登録" } }
-// → 消費税法 第 57 条の 2
+{ "tool": "search_fulltext", "args": { "keyword": "消費税法 適格請求書発行事業者の登録" } }
+// → source: "bulk", count: 2
+//   hits[0]: { law_title: "消費税法", article_num: "57の2", caption: "（適格請求書発行事業者の登録等）",
+//              chapter_path: "第五章　雑則", score_reasons: ["fts rank -2.60 → base 0.206", "article_caption_match"] }
+//   hits[1]: { law_title: "消費税法", article_num: "附則(137) 44", caption: "（適格請求書発行事業者の登録等に関する経過措置）",
+//              score_reasons: [..., "article_caption_match", "supplementary_provision"] }
+//   実測: houki-egov-mcp v0.15.1（2026-09-21）。ローカル DB が無いと source が "api-fallback" になり、search_law の結果が fallback に入る
 
 { "tool": "get_law", "args": { "law_name": "消費税法", "article": "57の2" } }
-// → 条文本文 + legal_status (binds_citizens=true / binds_courts=true)
+// → 条文本文（第 1 項〜第 12 項）+ meta: { law_id: "363AC0000000108", title: "消費税法", law_num: "昭和六十三年法律第百八号", retrieved_at, url }
+//   実測: houki-egov-mcp v0.15.1（2026-09-21）。get_law の応答に legal_status は付かない
+```
+
+法律の拘束力（国民を拘束する）は `get_law` の応答には入っていない。citation に書くときは `explain_law_type` の応答を根拠にする:
+
+```jsonc
+{ "tool": "explain_law_type", "args": { "name": "法律" } }
+// → info: { law_type_code: "Act", enacting_body: "国会（衆議院・参議院）", hierarchy_rank: 2,
+//           binds_citizens: true, can_set_penalties: true, … }
+//   実測: houki-egov-mcp v0.15.1（2026-09-21）。binds_courts は返さない。裁判所を拘束することは SKILL.md の階層の説明を根拠にする
 ```
 
 ### ステップ ④: 通達による解釈を取得 (houki-nta-mcp)
@@ -36,7 +56,10 @@
 ```jsonc
 { "tool": "nta_get_tsutatsu", "args": { "name": "消基通", "clause": "1-7-2" } }
 // → 「登録番号の構成」の通達本文
-// + legal_status (binds_tax_office=true / binds_citizens=false)
+// + legal_status: { binds_citizens: false, binds_courts: false, binds_tax_office: true, note: "通達は行政内部文書。…" }
+// + base_laws: ["消費税法", "消費税法施行令", "消費税法施行規則"]
+// + next_actions: [{ action: "delegate_to_mcp", example: { mcp: "houki-egov", tool: "get_law", law_name: "消費税法" } }]
+//   実測: houki-nta-mcp v0.20.0（2026-09-21、format: "json"）
 ```
 
 ### ステップ ⑤: 改正履歴を検索
@@ -122,9 +145,9 @@ pdf-reader-mcp があるので、`next_actions[0].example` をそのまま `extr
 ## Sources
 
 ### 法律 (法的根拠 / 国会制定)
-- 消費税法 第 57 条の 2「適格請求書発行事業者の登録」
-  ([e-Gov 法令検索](https://elaws.e-gov.go.jp/...))
-  > 取得: 2026-05-07T... / `binds_citizens=true` `binds_courts=true`
+- 消費税法 第 57 条の 2「適格請求書発行事業者の登録等」(昭和六十三年法律第百八号)
+  ([e-Gov 法令検索](https://laws.e-gov.go.jp/law/363AC0000000108))
+  > 取得: 2026-09-21T... / `binds_citizens=true` (`explain_law_type { name: "法律" }` の応答。裁判所を拘束することは法律の階層による)
 
 ### 行政解釈 (通達 / 税務署員のみ拘束)
 - 消費税法基本通達 1-7-2「登録番号の構成」
