@@ -52,8 +52,8 @@ sequenceDiagram
     S->>N: ⑤ 改正履歴 (kaisei) を検索
     N-->>S: 改正通達一覧 (hasPdf=true 推奨)
 
-    S->>N: ⑥ nta_inspect_pdf_meta で添付 PDF メタ
-    N-->>S: attachedPdfs + reader_hints
+    S->>N: ⑥ nta_inspect_pdf_meta で添付 PDF の読み方 (kind: comparison, save: true)
+    N-->>S: attachedPdfs (read_strategy / layout_note) + saved[].path + next_actions
 
     alt comparison/attachment kind の PDF
         S->>P: ⑦ extract_tables で表構造抽出
@@ -224,41 +224,41 @@ citation では、引いた条文を「法律 (法的根拠)」、通達を「�
 
 `hasPdf: true` で **添付 PDF (新旧対照表) を持つもの** だけに絞る。
 
-### ステップ ⑥: 添付 PDF メタを取得
+### ステップ ⑥: 添付 PDF の読み方を取得
 
 ```jsonc
 {
   "tool": "nta_inspect_pdf_meta",
-  "args": { "docType": "kaisei", "docId": "0025004-026" }
+  "args": { "docType": "kaisei", "docId": "0025004-026", "kind": "comparison", "save": true }
 }
-// → attachedPdfs + reader_hints.examples (kind 別に extract_tables 推奨)
+// → attachedPdfs[] (kind / read_strategy / layout_note)
+//   + saved[] (url / path / bytes / cached / error?)
+//   + next_actions[] (pdf-reader-mcp の呼び出し例 + 汎用の read_pdf)
 ```
 
-houki-nta-mcp v0.7.2+ の `reader_hints.examples` を信頼し、**kind ごとに正しい tool を選ぶ**。
+改正点だけが要るので `kind: "comparison"` で新旧対照表に絞る。表として取るには `save: true` が要る（pdf-reader-mcp の `extract_tables` は `file_path` しか受け取らない）。houki-nta-mcp v0.19.0 以上。
 
-### ステップ ⑦: PDF 本文を抽出
-
-`reader_hints.examples` に従って tool を呼ぶ:
+### ステップ ⑦: PDF を読み、改正点を取り出す
 
 ```mermaid
 flowchart TB
-  hint["reader_hints.examples を確認"]
-  hint --> q1{"kind は?"}
-  q1 -->|comparison| t1["pdf-reader-mcp の extract_tables<br/>(Tagged Table → Markdown)"]
-  q1 -->|attachment| t1
-  q1 -->|qa-pdf / related / notice / unknown| t2["pdf-reader-mcp の read_text"]
-  t1 --> q2{"Untagged で<br/>extract_tables 失敗?"}
-  q2 -->|Yes| t3["read_text + split_columns: 2"]
-  q2 -->|No| done1[OK]
-  t2 --> q3{"日本語帳票で<br/>U+3000 が大量?"}
-  q3 -->|Yes| t4["+ compact_whitespace: true"]
-  q3 -->|No| done2[OK]
+  meta["応答の attachedPdfs[].read_strategy と saved[].path を見る"]
+  meta --> reader{"pdf-reader-mcp はあるか"}
+  reader -->|ある| t1["next_actions[0].example をそのまま extract_tables に渡す<br/>{ file_path: saved[0].path }"]
+  reader -->|ない| t2["saved[0].path（無ければ url）を手元の PDF 読み取りツールに渡し<br/>layout_note のとおり左右 2 列の表として読む"]
+  t1 --> q2{"表が 0 件 (タグ無し)?"}
+  q2 -->|Yes| t3["read_text { file_path, split_columns: 2 }"]
+  q2 -->|No| diff
+  t2 --> diff["新旧対照表の読み方 (SKILL.md 鉄則 3) で改正点を取り出す:<br/>見出し行で左右を確かめる / （同左）・（省略）・（新設）・（削除） / 番号でなく内容で対応を取る"]
+  t3 --> diff
 
   classDef pri fill:#d4edda,stroke:#28a745
   classDef sec fill:#cce5ff,stroke:#0066cc
   class t1 pri
-  class t2,t3,t4 sec
+  class t2,t3 sec
 ```
+
+`saved[].error` が付いた PDF（`HTTP 404` など）は保存できていないので、`next_actions` の `read_url { url, split_columns: 2 }` で URL のまま読む。
 
 ### ステップ ⑧: 階層を明示した citation 付き回答
 
@@ -277,6 +277,9 @@ flowchart TB
 - ❌ `nta_get_qa` を `format` の既定 (markdown) のまま呼んで、根拠の条文を本文から探す → `format: "json"` の `related_laws` と `next_actions` を使う
 - ❌ `qa.notice` を落とす → 作成時点 (`basisDate`) と「個別の取引では異なる課税関係が生じうる」という断り書きが citation から消える
 - ❌ `nta_search_*` の `DOC_NOT_FOUND` を「該当なし」と答える → その種別の文書がローカル DB に無いだけ。`next_actions` の投入コマンドを案内する (houki-nta-mcp v0.13.0 以上)
-- ❌ 改正前後の差分を `read_text` で読む → カラムが交互連結し改正点が判別不能。`extract_tables` または `split_columns: 2` を使う
+- ❌ 改正前後の差分を `read_text` / `read_url` で `split_columns` 無しに読む → カラムが交互連結し改正点が判別不能。`extract_tables { file_path }` または `split_columns: 2` を使う
+- ❌ `nta_inspect_pdf_meta` の `url` を `extract_tables` に渡す → `extract_tables` は `file_path` しか受け取らない。`save: true` で呼び直して `saved[].path` を渡す
+- ❌ 新旧対照表の左右を見出し行で確かめずに「左が改正後」と決める → 多くはそうだが、決め打ちすると改正前後が逆になる
+- ❌ pdf-reader-mcp が無いからと PDF を読まずに終える → `saved[].path` か `url` を手元の PDF 読み取りツールに渡し、`layout_note` のとおりに読む
 - ❌ `legal_status` の引用を省略する → 通達と法律を同列に扱う citation になる
 - ❌ 「あなたの確定申告では…」と個別判断を返す → 業法独占規定 (税理士法 52 条) に抵触するおそれ

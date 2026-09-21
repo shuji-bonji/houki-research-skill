@@ -201,11 +201,11 @@ houki-nta-mcp 固有の `available_doc_ids` (新しい順に 30 件、`docId` / 
 ### MCP 呼び出しの引数
 
 ```jsonc
-// ① reader_hints に従って extract_tables を呼ぶ
+// ① nta_inspect_pdf_meta { kind: "comparison", save: true } の next_actions[0].example を extract_tables に渡す
 {
   "tool": "extract_tables",
   "args": {
-    "file_path": "/tmp/.../0025004-026/pdf/01.pdf",
+    "file_path": "/Users/me/.cache/houki-nta-mcp/files/kaisei/0025004-026/01.pdf",
     "pages": "1"
   }
 }

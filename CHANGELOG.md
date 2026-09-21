@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.13.0] - 2026-09-21
+
+**minor リリース** — houki-nta-mcp v0.19.0（#36）に合わせて、添付 PDF に当たったときの分岐を手順に置いた。読み手は pdf-reader-mcp に固定しない。
+
+### Added
+
+- **`SKILL.md` 鉄則 3 に「添付 PDF に当たったら、読み方を応答から取り、手元の読み手で読む」**: `nta_inspect_pdf_meta` を `kind` / `save: true` 付きで呼び、`attachedPdfs[].read_strategy`（tables / text / sample）と `layout_note` で読み方を決め、pdf-reader-mcp があれば `next_actions` の `example` をそのまま渡し（保存済みなら `extract_tables` / `read_text` に `file_path`、未保存なら `read_url` に `url`）、無ければ `saved[].path` か `url` を使っている PDF 読み取りツールに渡す、の 5 手。`saved[].error` が付いた PDF は URL のまま読む
+- **新旧対照表から改正点を取り出す読み方**（同じ節）: 左右どちらが改正後かを見出し行で確かめる、下線の情報は表として取ると落ちるので左右の文を突き合わせる、「（同左）」「（省略）」「（新設）」「（削除）」の扱い、項番号ではなく内容で対応を取る、表として取れなければ `split_columns: 2`。これは表を読んだ後の LLM の仕事で、houki-nta-mcp は担わない
+- **`workflows/tax-research.md` のアンチパターン**: `nta_inspect_pdf_meta` の `url` を `extract_tables` に渡す（`file_path` しか受け取らない）、左右を見出し行で確かめずに「左が改正後」と決める、pdf-reader-mcp が無いからと PDF を読まずに終える、の 3 件
+
+### Changed
+
+- **`SKILL.md` の「PDF 抽出時の選択ガイド」**: 入口を `inspect_tags` から `read_strategy` に変え、`save: true` の `saved[].path` があるかで `extract_tables { file_path }` と `read_url { url, split_columns: 2 }` に分ける形にした
+- **`SKILL.md` の family ツール表と利用前提、`README.md` の前提**: pdf-reader-mcp を「無くてもよい」にした。無ければ `saved[].path` / `url` と `layout_note` を手元の PDF 読み取りツールに渡す
+- **`workflows/tax-research.md` のステップ ⑥ ⑦**: `reader_hints.examples` 前提の手順を、`kind: "comparison", save: true` → `next_actions[0].example` をそのまま `extract_tables` に渡す手順に書き直した
+- **`README.md` の対応版**: houki-nta-mcp の欄に「添付 PDF の `read_strategy` / `layout_note` / `save: true` / `next_actions` は v0.19.0 以上」を足し、それより前は `reader_hints.examples` の `url` を `read_url` に渡すと書いた（`extract_tables` に `url` を渡す旧手順はそのままでは動かなかった）
+
+### なぜ手順に入れたか
+
+改正通達は本体が PDF のことが多く、`nta_inspect_pdf_meta` は種別と pdf-reader-mcp の呼び方を返すところで止まっていた（houki-hub Discussion #24 の劣 5）。旧手順の `reader_hints.examples` は `extract_tables` に `args: { url }` を渡す形で、pdf-reader-mcp の `extract_tables` は `file_path` しか受け取らないため、そのままでは呼べなかった。PDF を専用のツールで読む利用者も多いので、houki-nta-mcp 側は道具の名前を含まない読み方（`read_strategy` / `layout_note`）とファイルのパス（`save: true`）を返し、Skill 側で「手元の読み手で読む」分岐と新旧対照表の解釈手順を持つことにした。経緯は houki-hub の `docs/DECISIONS.md`（2026-09-21）。
+
 ## [0.12.0] - 2026-09-20
 
 **minor リリース** — houki-egov-mcp v0.15.0 の 3 ツール（`list_attachments` / `get_attachment` / `get_law_file`。別表・様式の図と、xml / json / html / rtf / docx の本文ファイル）を、family のツール一覧・エラーコードと `feasibility-check` の手順に置いた。
