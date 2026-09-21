@@ -236,7 +236,7 @@ citation では、引いた条文を「法律 (法的根拠)」、通達を「�
 //   + next_actions[] (pdf-reader-mcp の呼び出し例 + 汎用の read_pdf)
 ```
 
-改正点だけが要るので `kind: "comparison"` で新旧対照表に絞る。表として取るには `save: true` が要る（pdf-reader-mcp の `extract_tables` は `file_path` しか受け取らない）。houki-nta-mcp v0.19.0 以上。
+改正点だけが要るので `kind: "comparison"` で新旧対照表に絞る。0025004-026 では「【参考】…新旧対応表」（章の構成の対応表）と「別紙1」「別紙2」（本文の新旧対照表）の 3 件が返る（houki-nta-mcp v0.20.0 以上。v0.19.x は別紙が `attachment` になるので `kind` を付けずに全件を見る）。表として取るには `save: true` が要る（pdf-reader-mcp の `extract_tables` は `file_path` しか受け取らない）。
 
 ### ステップ ⑦: PDF を読み、改正点を取り出す
 
@@ -249,7 +249,7 @@ flowchart TB
   t1 --> q2{"表が 0 件 (タグ無し)?"}
   q2 -->|Yes| t3["read_text { file_path, split_columns: 2 }"]
   q2 -->|No| diff
-  t2 --> diff["新旧対照表の読み方 (SKILL.md 鉄則 3) で改正点を取り出す:<br/>見出し行で左右を確かめる / （同左）・（省略）・（新設）・（削除） / 番号でなく内容で対応を取る"]
+  t2 --> diff["新旧対照表の読み方 (SKILL.md 鉄則 3) で改正点を取り出す:<br/>見出し行で左右を確かめる / （同左）・（省略）・（新設）・（削除）、または【新設】・【削除】・【一部改正】 / 番号でなく内容で対応を取る"]
   t3 --> diff
 
   classDef pri fill:#d4edda,stroke:#28a745

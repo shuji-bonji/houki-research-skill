@@ -187,7 +187,7 @@ flowchart TB
 
 手順:
 
-1. `nta_inspect_pdf_meta` を呼ぶ。改正点だけが要るなら `kind: "comparison"`。表として取りたい（`read_strategy` が `tables` の PDF がある）なら `save: true` を付ける。pdf-reader-mcp の `extract_tables` / `read_text` はローカルファイル（`file_path`）しか受け取らず、`read_url` は URL のまま本文を返すだけで表としては取れない
+1. `nta_inspect_pdf_meta` を呼ぶ。改正点だけが要るなら `kind: "comparison"`。改正通達（kaisei）で「別紙1」「別紙2」とだけ題した PDF は本文の新旧対照表であることが多く、houki-nta-mcp v0.20.0 以上は `comparison` として返す（v0.19.x は `attachment` になるので、`kind` を付けずに全件を見て別紙も読む）。`kind: "comparison"` が 0 件で `note` に「kind="attachment" の別紙も読んでください」とあれば、`kind: "attachment"` で呼び直す。表として取りたい（`read_strategy` が `tables` の PDF がある）なら `save: true` を付ける。pdf-reader-mcp の `extract_tables` / `read_text` はローカルファイル（`file_path`）しか受け取らず、`read_url` は URL のまま本文を返すだけで表としては取れない
 2. 応答の `attachedPdfs[]` を見る。`read_strategy` は `tables`（表として取る。新旧対照表・別紙）/ `text`（本文として読む。Q&A・参考資料・通知）/ `sample`（先頭を見て決める。種別不明）。`layout_note` に紙面の組み方が書いてある。この 2 つは道具の名前を含まないので、どの読み手でも使える
 3. pdf-reader-mcp があるなら、`next_actions` の `action` が `pdf-reader-mcp:<tool>` の件の `example` を、その tool にそのまま渡す（`example` は引数だけで、`mcp` / `tool` は入っていない）。保存済みなら `extract_tables` / `read_text` / `summarize` に `file_path`、未保存なら `read_url` に `url`（新旧対照表は `split_columns: 2` 付き）
 4. pdf-reader-mcp が無いなら、`next_actions` の最後の `read_pdf` の `example`（`url`、保存済みなら `path` も）を、使っている PDF 読み取りツールに渡す。Claude Code なら `Read` に `path` を渡せる。`layout_note` のとおりに読む
@@ -197,7 +197,8 @@ flowchart TB
 
 - 左右どちらが改正後かを **見出し行で確かめる**。国税庁の新旧対照表は左が改正後、右が改正前のことが多いが、決め打ちしない
 - 変更箇所は下線（傍線）で示される。表として取れたときは下線の情報が落ちるので、左右の文を突き合わせて差分を拾う
-- 改正前の側の「（同左）」は改正後と同じ文、「（省略）」は改正に関係しない部分の省略、「（新設）」は改正前に無い項、「（削除）」は改正後に無い項。引用している条項の番号がずれることがある（改正後は「第２条第 16 項」、改正前は「第２条第 15 項」）ので、番号ではなく内容で対応を取る
+- 改正前の側の「（同左）」は改正後と同じ文、「（省略）」は改正に関係しない部分の省略。新設・削除の印は 2 通りある。本文の新旧対照表（改正通達の「別紙 N」）は丸括弧で「（新設）」（改正前に無い項）「（削除）」（改正後に無い項）、章の構成の対応表（「【参考】…新旧対応表」）は墨付き括弧で「【新設】」「【削除】」「【一部改正】」（改正前にもある項で、内容が変わったもの）。どちらの印でも「（新設）」「【新設】」は改正前の側、「（削除）」「【削除】」は改正後の側に置かれ、意味は同じに読む。引用している条項の番号がずれることがある（改正後は「第２条第 16 項」、改正前は「第２条第 15 項」）ので、番号ではなく内容で対応を取る
+- `comparison` が複数あるときは、どれが本文の新旧対照表でどれが章の構成（通達番号）の対応表かをタイトルで見分ける。改正点の根拠にするのは本文の新旧対照表（「別紙 N」）で、対応表は通達番号の付け替えを確かめるのに使う
 - 見出し行の下に「（注）アンダーラインを付した箇所が改正した箇所である。」と書かれているので、その文があれば下線が差分の印だと分かる
 - 表として取れなかった（`extract_tables` が 0 件、タグ無し）ときは `read_text` / `read_url` に `split_columns: 2` を付けて左右を分ける。1 列として読むと改正後と改正前の文が交互に混ざる
 - citation には、読んだ PDF の `url`、`kind`、どの読み手で読んだか（表として取れたか、本文として読んだか）を書く（[`docs/CITATION.md`](docs/CITATION.md)）
