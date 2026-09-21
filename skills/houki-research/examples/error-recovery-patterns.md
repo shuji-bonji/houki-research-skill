@@ -76,7 +76,7 @@ LLM は目次から「**第 57 条の 2**」が登録番号関連と当たりを
 
 ```jsonc
 { "tool": "get_law", "args": { "law_name": "消費税法", "article": "57の2" } }
-// → 条文本文 + legal_status
+// → 条文本文 + meta (law_id / title / law_num / retrieved_at / url)。legal_status は付かない (houki-egov-mcp v0.15.1、2026-09-21 実測)
 ```
 
 ### 期待される回答
@@ -368,7 +368,7 @@ retry も失敗した場合は **法律本文だけで部分回答** + 通達は
 ```jsonc
 // ② 自動で egov にルーティング
 { "tool": "get_law", "args": { "law_name": "消費税法", "article": "57の2" } }
-// → 条文本文 + legal_status
+// → 条文本文 + meta (law_id / title / law_num / retrieved_at / url)。legal_status は付かない (houki-egov-mcp v0.15.1、2026-09-21 実測)
 ```
 
 ### 期待される回答

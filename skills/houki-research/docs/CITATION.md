@@ -19,9 +19,9 @@
 ## Sources
 
 ### 法律 (法的根拠 / 国会制定)
-- 消費税法 第 57 条の 2「適格請求書発行事業者の登録」
-  ([e-Gov 法令検索](https://elaws.e-gov.go.jp/...))
-  > 取得: 2026-05-07T10:23:00+09:00 / `binds_citizens=true` `binds_courts=true`
+- 消費税法 第 57 条の 2「適格請求書発行事業者の登録等」(昭和六十三年法律第百八号)
+  ([e-Gov 法令検索](https://laws.e-gov.go.jp/law/363AC0000000108))
+  > 取得: 2026-09-21T16:25:05+09:00 / `binds_citizens=true` (`explain_law_type { name: "法律" }` の応答)
 
 ### 政令 / 省令
 - 消費税法施行令 第 70 条の 5
@@ -96,10 +96,10 @@ e-Gov に問い合わせられなかったときは、件ごとの判定では�
 
 ## 階層ラベルと出典の対応表
 
-| Citation の見出し | 出典 MCP | `legal_status` の典型値 |
+| Citation の見出し | 出典 MCP | 拘束力の典型値と出所 |
 |---|---|---|
-| 法律 (法的根拠 / 国会制定) | `houki-egov-mcp` | binds_citizens=true / binds_courts=true |
-| 政令 / 省令 | `houki-egov-mcp` | 同上 |
+| 法律 (法的根拠 / 国会制定) | `houki-egov-mcp` | binds_citizens=true (`get_law` の応答には無い。`explain_law_type { name: "法律" }` の `info.binds_citizens` を根拠にする。houki-egov-mcp v0.15.1 は `binds_courts` を返さない) |
+| 政令 / 省令 | `houki-egov-mcp` | 同上 (`explain_law_type { name: "政令" }` / `{ name: "省令" }`) |
 | 行政解釈 (通達) | `houki-nta-mcp` | binds_tax_office=true / binds_citizens=false |
 | 改正履歴 (新旧対照表) | `houki-nta-mcp` + `pdf-reader-mcp` | 同上 + 添付 PDF メタ |
 | 文書回答事例 | `houki-nta-mcp` | すべて false (参考情報) |

@@ -34,7 +34,7 @@ sequenceDiagram
     N-->>S: 解決結果
 
     S->>E: ③ 法律本文を取得 (法的根拠)
-    E-->>S: 条文 + legal_status
+    E-->>S: 条文 + meta (拘束力は explain_law_type で確かめる)
 
     S->>N: ④ 通達による解釈を取得
     N-->>S: 通達本文 + legal_status (binds_tax_office=true)<br/>+ base_laws + next_actions (v0.11.0+)
@@ -106,17 +106,23 @@ sequenceDiagram
   "tool": "get_toc",
   "args": { "law_name": "消費税法" }
 }
-// 法令名を探すとき（タイトル一致）
+// 法令名を探すとき（タイトル一致。条の見出しや本文の語では当たらない）
 {
   "tool": "search_law",
-  "args": { "keyword": "適格請求書発行事業者の登録" }
+  "args": { "keyword": "適格請求書" }
 }
+// → query.resolved: "消費税法"（略称辞書の alias で解決）。"適格請求書発行事業者の登録" のような条の見出しを渡すと total_count: 0
 // どの法令の何条か自体が不明なとき → 条文本文の横断検索（ローカル DB が必要）
 {
   "tool": "search_fulltext",
-  "args": { "keyword": "消費税法 適格請求書発行事業者 登録" }
+  "args": { "keyword": "消費税法 適格請求書発行事業者の登録" }
 }
+// → hits[0]: 消費税法 57の2「（適格請求書発行事業者の登録等）」（score_reasons に article_caption_match）
+//   hits[1]: 消費税法 附則(137) 44「（適格請求書発行事業者の登録等に関する経過措置）」
+//   実測: houki-egov-mcp v0.15.1（2026-09-21）
 ```
+
+`get_law` の応答は条文本文と `meta`（`law_id` / `title` / `law_num` / `retrieved_at` / `url`）で、`legal_status` は付かない。法律が国民を拘束すること（`binds_citizens: true`）は `explain_law_type { "name": "法律" }` の応答を根拠にする（houki-egov-mcp v0.15.1、2026-09-21 実測。`binds_courts` は返さない）。
 
 `search_fulltext` の応答で `source` が `"api-fallback"` なら本文検索は行われていない（`search_law` の結果が `fallback` に入っている）。その場合は `next_actions` の `bulk_download_everything`（`houki-egov-mcp --bulk-download-everything`）をユーザーに案内し、回答には「法令名の一致で探した」と書く。
 
@@ -236,7 +242,7 @@ citation では、引いた条文を「法律 (法的根拠)」、通達を「�
 //   + next_actions[] (pdf-reader-mcp の呼び出し例 + 汎用の read_pdf)
 ```
 
-改正点だけが要るので `kind: "comparison"` で新旧対照表に絞る。表として取るには `save: true` が要る（pdf-reader-mcp の `extract_tables` は `file_path` しか受け取らない）。houki-nta-mcp v0.19.0 以上。
+改正点だけが要るので `kind: "comparison"` で新旧対照表に絞る。0025004-026 では「【参考】…新旧対応表」（章の構成の対応表）と「別紙1」「別紙2」（本文の新旧対照表）の 3 件が返る（houki-nta-mcp v0.20.0 以上。v0.19.x は別紙が `attachment` になるので `kind` を付けずに全件を見る）。表として取るには `save: true` が要る（pdf-reader-mcp の `extract_tables` は `file_path` しか受け取らない）。
 
 ### ステップ ⑦: PDF を読み、改正点を取り出す
 
@@ -249,7 +255,7 @@ flowchart TB
   t1 --> q2{"表が 0 件 (タグ無し)?"}
   q2 -->|Yes| t3["read_text { file_path, split_columns: 2 }"]
   q2 -->|No| diff
-  t2 --> diff["新旧対照表の読み方 (SKILL.md 鉄則 3) で改正点を取り出す:<br/>見出し行で左右を確かめる / （同左）・（省略）・（新設）・（削除） / 番号でなく内容で対応を取る"]
+  t2 --> diff["新旧対照表の読み方 (SKILL.md 鉄則 3) で改正点を取り出す:<br/>見出し行で左右を確かめる / （同左）・（省略）・（新設）・（削除）、または【新設】・【削除】・【一部改正】 / 番号でなく内容で対応を取る"]
   t3 --> diff
 
   classDef pri fill:#d4edda,stroke:#28a745
