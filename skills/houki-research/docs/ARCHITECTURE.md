@@ -112,7 +112,8 @@ flowchart LR
 | `sourceUrl`    | 一次情報の URL (取得元の永続リンク)                                        | 全 MCP                         |
 | `fetched_at`   | 取得時刻 (ISO 8601)                                                        | 全 MCP                         |
 | `attachedPdfs` | `kind` / `url` / `sizeKb` 付きの添付 PDF メタ                              | houki-nta-mcp                  |
-| `reader_hints` | `kind` 別の pdf-reader-mcp 呼び出し例                                      | houki-nta-mcp v0.7.2+          |
+| `attachedPdfs[].read_strategy` / `layout_note` | 添付 PDF の読み方（`tables` / `text` / `sample`）と紙面の組み方。道具の名前を含まない | houki-nta-mcp v0.19.0+（v0.7.2〜v0.18.3 は `reader_hints`） |
+| `saved[]` | `nta_inspect_pdf_meta` を `save: true` で呼んだときの `url` / `path` / `bytes` / `cached` / `error?`。houki-egov-mcp の `get_attachment` は単数の `saved` | houki-nta-mcp v0.19.0+ / houki-egov-mcp v0.15.0+ |
 | `base_laws` / `base_laws_by_tsutatsu` | 基本通達が解釈している法律・施行令・施行規則 (get は配列、search は通達ごとの対応表) | houki-nta-mcp v0.11.0+ |
 | `next_actions` (成功時) | 次に呼ぶ tool の案内。通達の応答では houki-egov-mcp の `get_law` への `delegate_to_mcp`。質疑応答事例 (`nta_get_qa`) では条・項・号入りの `get_law` と `nta_get_tsutatsu` | houki-nta-mcp v0.11.0+ (`nta_get_qa` は v0.12.0+) / houki-egov-mcp (`search_fulltext` の `api-fallback`) |
 | `related_laws` / `related_tsutatsu` | 質疑応答事例の【関係法令通達】を法令 (`law_name` / `article` / `paragraph` / `item` / `appendix` / `raw`) と通達 (`name` / `clause` / `raw`) に分けたもの。枝番号の号は `item: "12の8"` の文字列 (v0.14.0+) | houki-nta-mcp v0.12.0+ (`nta_get_qa`、`format: "json"`) |

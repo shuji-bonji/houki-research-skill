@@ -49,34 +49,39 @@
 // → 改正通達一覧 (例: docId="0025004-026" の 2025-04-01 付け改正)
 ```
 
-### ステップ ⑥: 添付 PDF メタを取得
+### ステップ ⑥: 添付 PDF の読み方を取得
 
 ```jsonc
 {
   "tool": "nta_inspect_pdf_meta",
-  "args": { "docType": "kaisei", "docId": "0025004-026" }
+  "args": { "docType": "kaisei", "docId": "0025004-026", "kind": "comparison", "save": true }
 }
 // → attachedPdfs:
 //   [
-//     { kind: "comparison", title: "別紙 1 (新旧対照表)", url: "...", sizeKb: 221 },
-//     { kind: "attachment", title: "別紙 2", url: "...", sizeKb: 449 }
+//     { kind: "comparison", title: "別紙 1 (新旧対照表)", url: "...01.pdf", sizeKb: 221,
+//       read_strategy: "tables",
+//       layout_note: "改正後と改正前を左右 2 列に並べた表。国税庁の新旧対照表は左が改正後、右が改正前のことが多いが、見出し行で確かめる。…" }
 //   ]
-// + reader_hints.examples:
+// + saved:
+//   [ { url: "...01.pdf", path: "/Users/me/.cache/houki-nta-mcp/files/kaisei/0025004-026/01.pdf", bytes: 226304, cached: false } ]
+// + next_actions:
 //   [
-//     { kind: "comparison",  tool: "extract_tables", args: { url: "...01.pdf" } },
-//     { kind: "attachment",  tool: "extract_tables", args: { url: "...02.pdf" } }
+//     { action: "pdf-reader-mcp:extract_tables", reason: "新旧対照表を表として取る。…", example: { file_path: "/Users/me/.cache/houki-nta-mcp/files/kaisei/0025004-026/01.pdf" } },
+//     { action: "read_pdf", reason: "pdf-reader-mcp が無いときは、使っている PDF 読み取りツールに url（save: true で保存したときは path）を渡す。…", example: { url: "...01.pdf", path: "/Users/me/.cache/houki-nta-mcp/files/kaisei/0025004-026/01.pdf" } }
 //   ]
 ```
 
-### ステップ ⑦: 新旧対照表 PDF を表抽出 (pdf-reader-mcp)
+`kind: "comparison"` で新旧対照表だけに絞り、`save: true` でファイルを置く（houki-nta-mcp v0.19.0 以上）。
 
-`reader_hints.examples` の最優先 (`comparison`) を実行:
+### ステップ ⑦: 新旧対照表 PDF を表として取る
+
+pdf-reader-mcp があるので、`next_actions[0].example` をそのまま `extract_tables` に渡す:
 
 ```jsonc
 {
   "tool": "extract_tables",
   "args": {
-    "file_path": "<前段で取得した URL を read_url で fetch するか、ローカルパス>",
+    "file_path": "/Users/me/.cache/houki-nta-mcp/files/kaisei/0025004-026/01.pdf",
     "pages": "1"
   }
 }
@@ -85,6 +90,8 @@
 // |---|---|
 // | …第２条第 16 項《定義》… | …第２条第 15 項《定義》… |
 ```
+
+見出し行が「改正後 | 改正前」なので左が改正後。第 16 項（改正後）と第 15 項（改正前）は番号がずれているが、内容（《定義》）で対応を取る。pdf-reader-mcp が無い環境なら、`next_actions` の `read_pdf` の `path` を手元の PDF 読み取りツールに渡し、`layout_note` のとおり左右 2 列の表として読む。
 
 ### ステップ ⑧: 階層を明示した回答
 

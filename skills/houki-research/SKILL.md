@@ -101,8 +101,9 @@ sequenceDiagram
     S->>E: ③ 法律本文を取得 (法的根拠)
     Note over S,E: 条番号が分かる → get_law<br/>法令名だけ → search_law → get_law<br/>どの条か不明 → search_fulltext → get_law
     S->>N: ④ 通達による解釈を取得
-    S->>N: ⑤ 改正履歴 + 添付 PDF メタを取得
-    S->>P: ⑥ extract_tables / split_columns / read_text で PDF 本文
+    S->>N: ⑤ 改正履歴 + 添付 PDF の読み方を取得 (nta_inspect_pdf_meta)
+    Note over S,N: read_strategy / layout_note + save: true の path + next_actions
+    S->>P: ⑥ 手元にある PDF 読み取りツールで読む (pdf-reader-mcp なら next_actions のとおり)
     S-->>U: 階層を明示した citation 付き回答
 ```
 
@@ -164,6 +165,45 @@ sequenceDiagram
 
 houki-nta-mcp が v0.10.x 以前だと `base_laws` は無く、v0.11.x 以前だと `related_laws` は無い。そのときは本文の参照から法令名を自分で補う。
 
+#### 添付 PDF に当たったら、読み方を応答から取り、手元の読み手で読む (houki-nta-mcp v0.19.0 以上)
+
+改正通達の本体は PDF（新旧対照表・別紙）のことが多い。houki-nta-mcp は PDF の本文を読まないので、`nta_inspect_pdf_meta` の応答から **読み方** を取り、**手元にある PDF 読み取りツール** で読む。読み手は pdf-reader-mcp に限らない。
+
+```mermaid
+flowchart TB
+  meta["nta_inspect_pdf_meta<br/>{ docType, docId, kind?: 'comparison', save: true }"]
+  meta --> rs{"attachedPdfs[].read_strategy"}
+  rs -->|tables| reader{"pdf-reader-mcp はあるか"}
+  rs -->|text| reader
+  rs -->|sample| reader
+  reader -->|ある| na["next_actions[].example をそのまま渡す<br/>（action の後ろの tool 名。保存済みなら file_path、未保存なら url）"]
+  reader -->|ない| other["saved[].path（無ければ url）を、使っている PDF 読み取りツールに渡す<br/>layout_note のとおりに読む（tables なら表として、取れなければ左右 2 列で）"]
+  na --> cmp{"kind は comparison か"}
+  other --> cmp
+  cmp -->|Yes| diff["新旧対照表の読み方（下）で改正点を取り出す"]
+  cmp -->|No| done["本文を citation に使う"]
+  diff --> done
+```
+
+手順:
+
+1. `nta_inspect_pdf_meta` を呼ぶ。改正点だけが要るなら `kind: "comparison"`。表として取りたい（`read_strategy` が `tables` の PDF がある）なら `save: true` を付ける。pdf-reader-mcp の `extract_tables` / `read_text` はローカルファイル（`file_path`）しか受け取らず、`read_url` は URL のまま本文を返すだけで表としては取れない
+2. 応答の `attachedPdfs[]` を見る。`read_strategy` は `tables`（表として取る。新旧対照表・別紙）/ `text`（本文として読む。Q&A・参考資料・通知）/ `sample`（先頭を見て決める。種別不明）。`layout_note` に紙面の組み方が書いてある。この 2 つは道具の名前を含まないので、どの読み手でも使える
+3. pdf-reader-mcp があるなら、`next_actions` の `action` が `pdf-reader-mcp:<tool>` の件の `example` を、その tool にそのまま渡す（`example` は引数だけで、`mcp` / `tool` は入っていない）。保存済みなら `extract_tables` / `read_text` / `summarize` に `file_path`、未保存なら `read_url` に `url`（新旧対照表は `split_columns: 2` 付き）
+4. pdf-reader-mcp が無いなら、`next_actions` の最後の `read_pdf` の `example`（`url`、保存済みなら `path` も）を、使っている PDF 読み取りツールに渡す。Claude Code なら `Read` に `path` を渡せる。`layout_note` のとおりに読む
+5. `saved[].error` が付いた PDF は保存できていない（`HTTP 404`、`PDF ではありません（Content-Type: text/html）` など）。その PDF は `url` のまま読む。`note` に件数が出る
+
+新旧対照表（`kind: "comparison"`）から改正点を取り出すのは、表を読んだ後の LLM の仕事:
+
+- 左右どちらが改正後かを **見出し行で確かめる**。国税庁の新旧対照表は左が改正後、右が改正前のことが多いが、決め打ちしない
+- 変更箇所は下線（傍線）で示される。表として取れたときは下線の情報が落ちるので、左右の文を突き合わせて差分を拾う
+- 改正前の側の「（同左）」は改正後と同じ文、「（省略）」は改正に関係しない部分の省略、「（新設）」は改正前に無い項、「（削除）」は改正後に無い項。引用している条項の番号がずれることがある（改正後は「第２条第 16 項」、改正前は「第２条第 15 項」）ので、番号ではなく内容で対応を取る
+- 見出し行の下に「（注）アンダーラインを付した箇所が改正した箇所である。」と書かれているので、その文があれば下線が差分の印だと分かる
+- 表として取れなかった（`extract_tables` が 0 件、タグ無し）ときは `read_text` / `read_url` に `split_columns: 2` を付けて左右を分ける。1 列として読むと改正後と改正前の文が交互に混ざる
+- citation には、読んだ PDF の `url`、`kind`、どの読み手で読んだか（表として取れたか、本文として読んだか）を書く（[`docs/CITATION.md`](docs/CITATION.md)）
+
+houki-nta-mcp が v0.18.x 以前だと `read_strategy` / `layout_note` / `saved` / `next_actions` は無く、代わりに `reader_hints.examples` が付く。その `args: { url }` を `extract_tables` にそのまま渡すと失敗する（`extract_tables` は `file_path` しか受け取らない）。`url` を `read_url` に渡し、新旧対照表なら `split_columns: 2` を付ける。
+
 #### 索引から消えた文書は現行の取扱いとして引用しない (houki-nta-mcp v0.17.0 以上)
 
 `nta_search_*` の結果の各件と `nta_get_*` の応答に `index_status: "removed_from_index"` と `orphaned_at` が付いていたら、その文書は国税庁の索引から外れている。houki-nta-mcp は削除せず残しているので、過去の課税期間を調べるときは引ける。**現在の取扱いを答える根拠にはしない。**
@@ -203,8 +243,8 @@ houki-nta-mcp が v0.16.x 以前だと `index_status` は付かない。その�
 
 ### 改正履歴 (差分 PDF)
 
-- 消費税法基本通達 一部改正 (2025-04-01) — 新旧対照表 — [link](https://...)
-  > pdf-reader-mcp の extract_tables で抽出
+- 消費税法基本通達 一部改正 (2025-04-01) — 新旧対照表 (kind: comparison) — [link](https://...)
+  > 表として抽出 (pdf-reader-mcp の extract_tables)。左が改正後、右が改正前を見出し行で確認
 ```
 
 ### 鉄則 5: エラー時はフォールバックして citation で注記する
@@ -231,7 +271,7 @@ houki-nta-mcp が v0.16.x 以前だと `index_status` は付かない。その�
 | `@shuji-bonji/houki-abbreviations` | 略称辞書 (全分野の法令、npm package、各 MCP に内蔵)             | (`resolve_abbreviation` 経由)                                           |
 | `@shuji-bonji/houki-egov-mcp`      | 法律・政令・省令の本文・検索 (全分野)                           | `search_law` / `get_law` / `get_toc` / `get_law_range` (v0.14.0 以上) / `search_fulltext` (要ローカル DB) / `get_law_revisions` / `get_related_laws` / `get_article_references` (v0.10.0 以上) / `verify_citations` (v0.11.0 以上) / `list_attachments` / `get_attachment` / `get_law_file` (別表・様式の図と xml / html / docx の本文ファイル。v0.15.0 以上) |
 | `@shuji-bonji/houki-nta-mcp`       | 国税庁の通達・改正・文書回答・QA・タックスアンサー (税務に特化) | `nta_search_*` / `nta_get_*` / `nta_inspect_pdf_meta`                   |
-| `@shuji-bonji/pdf-reader-mcp`      | 添付 PDF 本文抽出 (汎用)                                        | `read_text` (`split_columns` / `compact_whitespace`) / `extract_tables` |
+| `@shuji-bonji/pdf-reader-mcp`      | 添付 PDF 本文抽出 (汎用)。**無くてもよい** — 無ければ `nta_inspect_pdf_meta` の `saved[].path` / `url` と `layout_note` を、使っている PDF 読み取りツールに渡す | `read_url` (URL のまま) / `extract_tables` (`file_path`) / `read_text` (`split_columns` / `compact_whitespace`) |
 
 ### 将来 (📅 計画中 / 💭 構想中)
 
@@ -243,21 +283,25 @@ houki-nta-mcp が v0.16.x 以前だと `index_status` は付かない。その�
 
 これらが追加されても本スキルの **行動指針 (4 責務 / 鉄則 5 つ)** は不変。新 MCP は同じ階層原則に従って統合される。
 
-PDF 抽出時の選択ガイド:
+PDF 抽出時の選択ガイド (houki-nta-mcp の応答から入る場合は鉄則 3 の「添付 PDF に当たったら」を先に見る):
 
 ```mermaid
 flowchart TB
-  pdf[添付 PDF を読みたい] --> q1{Tagged PDF?<br/>inspect_tags で確認}
-  q1 -->|Yes + 表構造| t1[extract_tables を最優先]
-  q1 -->|Yes + 散文| t2[read_text]
-  q1 -->|No + 多カラム| t3["read_text + split_columns: 2"]
-  q1 -->|No + 散文| t4[read_text]
-  q1 -.CJK 帳票.-> t5["+ compact_whitespace: true<br/>(トークン約 40% 削減)"]
+  pdf[添付 PDF を読みたい] --> q0{"read_strategy は?<br/>(nta_inspect_pdf_meta)"}
+  q0 -->|tables| q1{"ローカルファイルがあるか<br/>(save: true の saved[].path)"}
+  q0 -->|text| t4["read_url { url } または read_text { file_path }"]
+  q0 -->|sample| t6["read_url { url, pages: '1' } または summarize { file_path }"]
+  q1 -->|Yes| t1["extract_tables { file_path }"]
+  q1 -->|No| t3["read_url { url, split_columns: 2 }"]
+  t1 --> q2{"表が 0 件 (タグ無し)?"}
+  q2 -->|Yes| t3b["read_text { file_path, split_columns: 2 }"]
+  q2 -->|No| ok[OK]
+  t4 -.CJK 帳票.-> t5["+ compact_whitespace: true<br/>(トークン約 40% 削減)"]
 
   classDef pri fill:#d4edda,stroke:#28a745,color:#333
   classDef sec fill:#cce5ff,stroke:#0066cc,color:#333
   class t1 pri
-  class t2,t3,t4,t5 sec
+  class t3,t3b,t4,t5,t6 sec
 ```
 
 ## 典型ワークフロー
@@ -288,7 +332,7 @@ MCP を組み込む開発者は問いを投げる利用者ではなく、契約�
 
 ## 利用前提
 
-- **`houki-egov-mcp` / `houki-nta-mcp` / `pdf-reader-mcp`** が Claude Desktop / Claude Code に登録済みであること
+- **`houki-egov-mcp` / `houki-nta-mcp`** が Claude Desktop / Claude Code に登録済みであること。`pdf-reader-mcp` は添付 PDF を表として取るときに使うが、無くても手元の PDF 読み取りツールで代わりになる (鉄則 3 の「添付 PDF に当たったら」)
 - houki-nta-mcp の bulk DL (`--bulk-download-everything`) が初回完了済みであること
 
 設定方法は houki-nta-mcp の [`docs/HOUKI-FAMILY-INTEGRATION.md`](https://github.com/shuji-bonji/houki-nta-mcp/blob/main/docs/HOUKI-FAMILY-INTEGRATION.md) に詳細あり。
