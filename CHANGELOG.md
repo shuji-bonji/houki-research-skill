@@ -7,7 +7,7 @@
 ### Fixed
 
 - **ステップ ③ の条の探し方**: `search_law { keyword: "適格請求書発行事業者の登録" }` は `total_count: 0` になる（`search_law` は法令名の検索で、条の見出しでは当たらない）。`search_fulltext { keyword: "消費税法 適格請求書発行事業者の登録" }` で 57 条の 2 を探してから `get_law` で本文を取る形にした。SKILL.md 鉄則 3 の表（「どの法令の何条か不明 → `search_fulltext` → `get_law`」）と同じ手順になった
-- **`get_law` の応答に無い `legal_status`**: 例文が `get_law` の応答に `legal_status (binds_citizens=true / binds_courts=true)` があると書いていたが、実際の応答は条文本文と `meta`（`law_id` / `title` / `law_num` / `retrieved_at` / `url`）だけ。法律の拘束力は `explain_law_type { name: "法律" }` の応答（`binds_citizens: true`、`hierarchy_rank: 2`。`binds_courts` は返さない）を根拠にする、と書き換えた。ステップ ⑧ の citation と `workflows/tax-research.md` のシーケンス図（`E-->>S: 条文 + legal_status`）も同じく直した
+- **`get_law` の応答に無い `legal_status`**: 例文が `get_law` の応答に `legal_status (binds_citizens=true / binds_courts=true)` があると書いていたが、実際の応答は条文本文と `meta`（`law_id` / `title` / `law_num` / `retrieved_at` / `url`）だけ。法律の拘束力は `explain_law_type { name: "法律" }` の応答（`binds_citizens: true`、`hierarchy_rank: 2`。`binds_courts` は返さない）を根拠にする、と書き換えた。ステップ ⑧ の citation と `workflows/tax-research.md` のシーケンス図（`E-->>S: 条文 + legal_status`）も同じく直した。同じ主張が `docs/CITATION.md`（citation の例と「階層ラベルと出典の対応表」）と `examples/error-recovery-patterns.md`（`get_law` の例 2 か所）にもあったので合わせて直した
 - **ステップ ② の `resolve_abbreviation` の例文**: 「インボイス」は `formal: "適格請求書等保存方式"` ではなく消費税法の alias で、`resolved.formal: "消費税法"`、`source_mcp_hint: "houki-egov"`、`in_scope: false` が返る。実測どおりに直した
 
 ### Changed
