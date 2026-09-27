@@ -21,7 +21,7 @@
 | ③ citation の標準化 | 出典の書式と、法令・通達・参考情報の拘束力の階層をどう示すか |
 | ④ 業務外利用の境界設定 | 参考調査として答えてよい範囲と、業としての相談にあたる範囲の線引き |
 
-family 共通のエラー語彙 (`OUT_OF_SCOPE` など) とその解釈も、この Skill が正典を持ちます。
+エラーの `code`（`OUT_OF_SCOPE` など）を受け取ったときの解釈もこの Skill が決めます。code の定義の正本は各 MCP の仕様（`specs/current/common_errors/spec.md`）で、この Skill の [`docs/ERROR-CODES.md`](skills/houki-research/docs/ERROR-CODES.md) はそれをまとめた一覧です。
 
 > [!NOTE]
 > MCP server ではありません。`houki-egov-mcp` などは別リポジトリで、この Skill が決めるのは **それらを呼ぶ順序と、答えの書き方** です。配布は plugin で、[shuji-bonji/claude-plugins](https://github.com/shuji-bonji/claude-plugins) の marketplace から導入できます (経路は [インストール](#インストール) に 4 つ)。
@@ -158,7 +158,7 @@ v0.7.0 から `houki-egov-mcp` と `houki-nta-mcp` を `dependencies` に宣言�
 | `@shuji-bonji/houki-abbreviations` | v0.3.0 以上 (各 MCP に内蔵)                        | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-abbreviations) | [GitHub](https://github.com/shuji-bonji/houki-abbreviations) |
 
 > [!NOTE]
-> 推奨最小バージョンは family 共通エラー契約 (`OUT_OF_SCOPE` 等のコード語彙) と PDF 抽出機能の整合性を担保するための目安です。それ以前のバージョンでも skill 自体は動作しますが、エラーフォールバック例 (`examples/error-recovery-patterns.md`) の挙動が一致しない可能性があります。
+> 推奨最小バージョンは、エラーの `code`（`OUT_OF_SCOPE` など）と PDF 抽出の手順が Skill の記述と合うための目安です。それ以前のバージョンでも skill 自体は動作しますが、エラーフォールバック例 (`examples/error-recovery-patterns.md`) の挙動が一致しない可能性があります。
 
 セットアップの詳細は [houki-nta-mcp の HOUKI-FAMILY-INTEGRATION.md](https://github.com/shuji-bonji/houki-nta-mcp/blob/main/docs/HOUKI-FAMILY-INTEGRATION.md) を参照。
 
@@ -175,7 +175,7 @@ houki-research-skill/
 │       │   ├── ARCHITECTURE.md     # Skill 層と MCP 層の分担
 │       │   ├── BUSINESS-LAW.md     # 業法独占規定の詳細解説
 │       │   ├── CITATION.md         # citation 標準フォーマット
-│       │   ├── ERROR-CODES.md      # family 共通エラー語彙
+│       │   ├── ERROR-CODES.md      # family の MCP が返す code の一覧 (正本は各 MCP の仕様)
 │       │   └── ERROR-HANDLING.md   # エラー解釈ポリシー
 │       ├── workflows/              # 横断 orchestration の典型ワークフロー (問いの形ごと)
 │       │   ├── feasibility-check.md   # 実装前に、仕様が法令のどこに触れるか
@@ -183,11 +183,33 @@ houki-research-skill/
 │       └── examples/               # LLM 向け few-shot
 │           ├── invoice-registration.md
 │           └── error-recovery-patterns.md
+├── scripts/                        # CI の検査 (plugin には含めない)
+│   ├── mcp-refs.config.json        # 突き合わせる MCP の版と code の正本の場所
+│   ├── update-mcp-snapshots.mjs    # MCP の tools/list と code の正本から mcp-snapshots/ を作る
+│   └── check-mcp-refs.mjs          # 文書のツール名・引数名・code を mcp-snapshots/ と突き合わせる
+├── mcp-snapshots/                  # update-mcp-snapshots.mjs の出力 (自動生成)
 ├── README.md                       # このファイル (人間向け概要)
 └── LICENSE                         # MIT
 ```
 
 `.claude-plugin/plugin.json` は Claude Code / Cowork の plugin 仕様に準拠した manifest。`skills/houki-research/` 配下が実体で、`SKILL.md` が Claude にロードされるメインプロンプトです。
+
+## 文書の検査（CI）
+
+Skill の文書に書いたツールの呼び出し例とエラーの `code` が、MCP の実物と食い違わないように、CI（`.github/workflows/ci.yml`）で 2 つの検査をします。基準は `scripts/mcp-refs.config.json` に書いた版の MCP です。
+
+| 検査 | 何と突き合わせるか | 見つけるもの |
+| --- | --- | --- |
+| ツール名・引数名 | 各 MCP の `tools/list` の応答の `inputSchema` | 呼び出し例のツール名が無い、引数名が `properties` に無い（`additionalProperties: false` の MCP では呼ぶと `INVALID_ARGUMENT` になる） |
+| エラーの code | houki-egov-mcp・houki-nta-mcp の `specs/current/common_errors/spec.md`、pdf-reader-mcp の型 `LawErrorCode` | `docs/ERROR-CODES.md` の一覧と正本のずれ、文書に出てくる code が一覧に無い |
+
+```bash
+node scripts/check-mcp-refs.mjs          # 文書を mcp-snapshots/ と突き合わせる（ネットワーク不要）
+node scripts/update-mcp-snapshots.mjs    # MCP の版を上げたら mcp-snapshots/ を作り直す（npm と GitHub に接続する）
+node --test 'scripts/test/*.test.mjs'   # 検査スクリプト自体のテスト
+```
+
+週に 1 回（`.github/workflows/mcp-drift.yml`）、npm の最新版の MCP でも同じ検査を実行し、新しい版で文書が古くなっていないかを確かめます。
 
 ## 業法独占への配慮（重要）
 

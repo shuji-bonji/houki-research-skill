@@ -1,0 +1,29 @@
+name: MCP drift
+
+# npm の最新版の MCP でも Skill の文書が通るかを週に 1 回確かめる。
+# 失敗したら、MCP の新しい版で消えた・名前が変わったツール、引数、code を文書が使っている。
+# 対応: scripts/mcp-refs.config.json の版を上げ、node scripts/update-mcp-snapshots.mjs で作り直し、文書を直す。
+
+on:
+  schedule:
+    - cron: '13 0 * * 1' # 毎週月曜 09:13 JST（00:13 UTC）
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  latest:
+    name: 最新版の MCP と突き合わせる
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: npm の最新版で mcp-snapshots/ を作り直す
+        run: node scripts/update-mcp-snapshots.mjs --latest
+      - name: 設定の版からの変化
+        run: git diff --stat -- mcp-snapshots/ && git diff -- mcp-snapshots/
+      - name: 文書を最新版と突き合わせる
+        run: node scripts/check-mcp-refs.mjs

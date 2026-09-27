@@ -1,0 +1,37 @@
+name: CI
+
+# Skill の文書に書いたツールの呼び出し例とエラーの code が、MCP の実物と食い違っていないかを確かめる。
+# 基準は scripts/mcp-refs.config.json の版の MCP（mcp-snapshots/ に写したもの）。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-refs:
+    name: ツール名・引数名とエラーの code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 検査スクリプトのテスト
+        run: node --test 'scripts/test/*.test.mjs'
+      - name: 文書を mcp-snapshots/ と突き合わせる
+        run: node scripts/check-mcp-refs.mjs
+
+  snapshots:
+    name: mcp-snapshots/ が設定の版の MCP と同じか
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 設定の版の MCP から作り直してコミット済みと比べる
+        run: node scripts/update-mcp-snapshots.mjs --check

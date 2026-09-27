@@ -1,6 +1,6 @@
 # ERROR-HANDLING — エラー応答の解釈と振る舞い
 
-`houki-hub` MCP family の各 MCP からエラー応答を受け取ったときの **Skill 層 (LLM) の振る舞い**を定める。語彙は [`ERROR-CODES.md`](ERROR-CODES.md) を参照。
+`houki-hub` MCP family の各 MCP からエラー応答を受け取ったときの **Skill 層 (LLM) の振る舞い**を定める。どの MCP がどの code を返すかは [`ERROR-CODES.md`](ERROR-CODES.md) の一覧を、code の定義は各 MCP の仕様（正本）を参照。
 
 ## 基本フロー
 
@@ -40,7 +40,7 @@ flowchart TB
 | 項目               | 内容                                                                                                                               |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
 | 原因               | 法令名・条番号・docId が誤っている / 存在しない / 略称のまま                                                                       |
-| Skill の振る舞い   | ① 略称解決 (`resolve_abbreviation`) → ② 検索系 tool (`search_law` / `search_tsutatsu`) → ③ 目次系 (`get_toc`) の順でフォールバック |
+| Skill の振る舞い   | ① 略称解決 (`resolve_abbreviation`) → ② 検索系 tool (`search_law` / `nta_search_tsutatsu`) → ③ 目次系 (`get_toc`) の順でフォールバック |
 | ユーザーに見せるか | 上記をすべて試して見つからなかった場合のみ報告                                                                                     |
 | メッセージ整形例   | 「『○○法 第3000条』は見つかりませんでした。同法は第○○条までです」                                                                  |
 
@@ -192,12 +192,12 @@ flowchart LR
 
 ## メンテナンス方針
 
-- 新しい code を [`ERROR-CODES.md`](ERROR-CODES.md) に追加したら、本書の「コード別の標準対応」表にも対応行を追加する
+- MCP の正本に新しい code が加わり [`ERROR-CODES.md`](ERROR-CODES.md) の一覧に行を足したら、本書の「コード別の標準対応」にも対応を足す（手順は ERROR-CODES.md の「code が増えたり変わったりしたときの順番」）
 - 実利用で頻発するエラーパターン・有効だったフォールバック手順は本書に蓄積する
 - `retryable` の判定が変わったら retry ポリシーと整合を取る
 
 ## 関連
 
-- [`ERROR-CODES.md`](ERROR-CODES.md) — エラーコード語彙の正典
+- [`ERROR-CODES.md`](ERROR-CODES.md) — family の MCP が返す code の一覧（正本は各 MCP の仕様）
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — Skill 層と MCP 層の責務分担 (本書はこの 3 層構成の Skill 層側を担う)
 - [`CITATION.md`](CITATION.md) — 部分回答時の citation 整形ルール

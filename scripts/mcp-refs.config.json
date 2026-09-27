@@ -1,0 +1,29 @@
+{
+  "$comment": "Skill の文書と突き合わせる MCP の版。版を上げたら `node scripts/update-mcp-snapshots.mjs` で mcp-snapshots/ を作り直す。errorCodes は code の正本の場所（spec は GitHub のタグ v<version> の specs/、dts は npm パッケージの型定義）。",
+  "servers": [
+    {
+      "name": "houki-egov",
+      "column": "houki-egov-mcp",
+      "npm": "@shuji-bonji/houki-egov-mcp",
+      "version": "0.15.2",
+      "repo": "shuji-bonji/houki-egov-mcp",
+      "errorCodes": { "spec": "specs/current/common_errors/spec.md" }
+    },
+    {
+      "name": "houki-nta",
+      "column": "houki-nta-mcp",
+      "npm": "@shuji-bonji/houki-nta-mcp",
+      "version": "0.21.1",
+      "repo": "shuji-bonji/houki-nta-mcp",
+      "errorCodes": { "spec": "specs/current/common_errors/spec.md" }
+    },
+    {
+      "name": "pdf-reader",
+      "column": "pdf-reader-mcp",
+      "npm": "@shuji-bonji/pdf-reader-mcp",
+      "version": "0.15.5",
+      "repo": "shuji-bonji/pdf-reader-mcp",
+      "errorCodes": { "dts": "dist/errors.d.ts", "type": "LawErrorCode" }
+    }
+  ]
+}

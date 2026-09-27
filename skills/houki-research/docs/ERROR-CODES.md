@@ -1,185 +1,127 @@
-# ERROR-CODES — family 共通エラー語彙の正典
+# ERROR-CODES — family の MCP が返すエラーの code の一覧
 
-`houki-hub` MCP family の各 MCP は、エラー応答に **共通の `code` 文字列**を使う。各 MCP は独自に `errors.ts` 等を実装するが、`code` の語彙だけは本ドキュメントを正典とする。
+この文書は、Skill がエラー応答を解釈するときに、どの MCP がどの `code` を返しうるかを 1 か所で見渡すための一覧です。code の定義そのもの（正本）は各 MCP のリポジトリにあり、この一覧はそれをまとめたものです。
 
-これにより、Skill 層 (`houki-research-skill`) は **どの MCP からのエラーでも一貫したロジックで解釈・表示**できる。
+## 正本の場所
 
-## 設計原則 — 共有するのはコードのみ、実装は独立
+各 code の意味、どの場面でどの code を返すか、`retryable` を付けるかは、各 MCP の仕様が決めます。この一覧は決めません。
+
+| MCP | code の正本 | どの場面で返すか |
+| --- | --- | --- |
+| houki-egov-mcp | [`specs/current/common_errors/spec.md`](https://github.com/shuji-bonji/houki-egov-mcp/blob/main/specs/current/common_errors/spec.md) の「エラーの code」の表 | 各ツールの `specs/current/<ツール名>/spec.md` |
+| houki-nta-mcp | [`specs/current/common_errors/spec.md`](https://github.com/shuji-bonji/houki-nta-mcp/blob/main/specs/current/common_errors/spec.md) の「エラーの code」の表 | 各ツールの `specs/current/<ツール名>/spec.md` |
+| pdf-reader-mcp | [`src/errors.ts`](https://github.com/shuji-bonji/pdf-reader-mcp/blob/main/src/errors.ts) の型 `LawErrorCode`（specs/ はまだ無い） | README とツールの説明 |
+
+エラー応答の形（`error` と `code` は必ず付き、`hint` / `next_actions` / `retryable` / `detail` は値があるときだけ付く）も、houki-egov-mcp と houki-nta-mcp の `common_errors` の spec.md が正本です。
+
+## 一覧と正本を揃える仕組み
+
+この一覧が正本とずれていないかは、CI の `node scripts/check-mcp-refs.mjs` が確かめます。基準は `mcp-snapshots/` の JSON で、`node scripts/update-mcp-snapshots.mjs` が `scripts/mcp-refs.config.json` の版の MCP から作ります。
 
 ```mermaid
-graph TB
-  subgraph s["Skill 層"]
-    s1["ERROR-CODES.md (本書)<br/>family-wide な語彙"]
-    s2["ERROR-HANDLING.md<br/>解釈ポリシー / next_actions"]
+flowchart LR
+  subgraph mcp["各 MCP のリポジトリ（正本）"]
+    e["houki-egov-mcp<br/>common_errors/spec.md"]
+    n["houki-nta-mcp<br/>common_errors/spec.md"]
+    p["pdf-reader-mcp<br/>型 LawErrorCode"]
   end
-
-  subgraph contract["Family Contract (informal)"]
-    c1["{ error: string, code: string, ... }"]
+  subgraph skill["houki-research-skill"]
+    cfg["scripts/mcp-refs.config.json<br/>（突き合わせる版）"]
+    snap["mcp-snapshots/*.json"]
+    doc["docs/ERROR-CODES.md<br/>（この一覧）"]
+    other["SKILL.md・docs・workflows・examples<br/>の本文に出てくる code"]
   end
-
-  subgraph mcps["MCP 層 — 独自実装"]
-    m1["houki-egov-mcp<br/>src/errors.ts"]
-    m2["houki-nta-mcp<br/>独自実装"]
-    m3["pdf-reader-mcp<br/>独自実装<br/>(houki-abbreviations 不依存)"]
-    m4["houki-mhlw-mcp<br/>(計画中)"]
-  end
-
-  contract --> m1
-  contract --> m2
-  contract --> m3
-  contract --> m4
-  s -.読み取り.-> m1
-  s -.読み取り.-> m2
-  s -.読み取り.-> m3
-
-  classDef s fill:#fff3cd,stroke:#ffc107,color:#333
-  classDef m fill:#cce5ff,stroke:#0066cc,color:#333
-  classDef c fill:#d4edda,stroke:#28a745,color:#333
-  class s1,s2 s
-  class m1,m2,m3,m4 m
-  class c1 c
+  e --> snap
+  n --> snap
+  p --> snap
+  cfg --> snap
+  snap -->|"check-mcp-refs.mjs"| doc
+  doc -->|"check-mcp-refs.mjs"| other
 ```
 
-**各 MCP に求められる最低保証 (informal contract):**
+`check-mcp-refs.mjs` は次の 3 点を確かめ、1 つでも合わなければ CI が失敗します。
 
-```ts
-// 各 MCP がエラー時に返すべき最低構造
-interface FamilyErrorContract {
-  error: string; // 1文の人間可読メッセージ (LLM もここを読む)
-  code: string; // 本ドキュメントの語彙に従う安定コード
-  // 以下は任意だが、揃っているとSkill層の処理が綺麗になる
-  hint?: string;
-  next_actions?: { action: string; reason: string; example?: object }[];
-  retryable?: boolean;
-  detail?: { status?: number; url?: string; cause?: string };
-}
-```
+- 各 MCP の正本にある code が下の表にあり、その MCP の列に印がある
+- 下の表で MCP の列に印のある code が、その MCP の正本にある
+- Skill の文書の本文に出てくる code（`ARTICLE_NOT_FOUND` など）が、下の表にある
 
-各 MCP は houki-abbreviations 等の共通パッケージに依存せず、**自前で型を定義**してよい。共有するのはコード文字列の語彙だけ。
+### code が増えたり変わったりしたときの順番
 
-## 共通コード語彙
+1. MCP のリポジトリで `common_errors` の spec.md を変える仕様 PR を出し、実装して公開する
+2. この Skill の `scripts/mcp-refs.config.json` の版を上げ、`node scripts/update-mcp-snapshots.mjs` で `mcp-snapshots/` を作り直す
+3. `node scripts/check-mcp-refs.mjs` が示す行に合わせて、この一覧と [`ERROR-HANDLING.md`](ERROR-HANDLING.md) の「コード別の標準対応」を直す
 
-### 引数・入力 (クライアント責任)
+この Skill の側で code を先に決めて MCP に実装を求めることはしません。
 
-| code                  | 意味                                                                    | retryable | 主な発生 MCP   |
-| --------------------- | ----------------------------------------------------------------------- | --------- | -------------- |
-| `INVALID_ARGUMENT`    | 引数が `tools/list` の `inputSchema` に合わない (型・必須・enum)。egov 0.6.0+ / nta 0.14.0+ は inputSchema に無い引数もエラーにする。egov 0.5.3+ / nta 0.10.0+ は `detail.issues[]` に `{ path, message }` を入れて返す (未知の引数は `path` に引数名が読点区切りで並ぶ。例: `"mcp, tool"`) | `false`   | 全 MCP         |
-| `INVALID_ARTICLE_NUM` | 条番号フォーマットが不正 (例: 未対応の漢数字)                           | `false`   | houki-egov-mcp |
-| `OUT_OF_SCOPE`        | 別 MCP の管轄リソースが要求された (略称解決の結果、他 MCP の対象と判明) | `false`   | 全 MCP         |
+## code の一覧
 
-### リソース未発見
+印（○）は、その MCP の正本の code の表に載っていることを表します。正本に載っていても今の版では返さない code があります（下の「正本に載っているが返さない code」）。
 
-| code                     | 意味                                | retryable | 主な発生 MCP                   |
-| ------------------------ | ----------------------------------- | --------- | ------------------------------ |
-| `LAW_NOT_FOUND`          | 指定された法令が見つからない        | `false`   | houki-egov-mcp / houki-nta-mcp |
-| `ARTICLE_NOT_FOUND`      | 条/項/号が見つからない              | `false`   | houki-egov-mcp                 |
-| `RANGE_NOT_FOUND`        | 指定された編・章・節、または附則の番号が見つからない (範囲取得。egov 0.14.0+ の `get_law_range`) | `false`   | houki-egov-mcp                 |
-| `ATTACHMENT_NOT_FOUND`   | 指定された添付ファイル (`src`) がその法令履歴に無い、添付が 1 件も無い、または e-Gov の `/attachment` が「存在しない」(code 404003) を返した (egov 0.15.0+ の `get_attachment`。`list_attachments` で添付が無い法令は `count: 0` の成功応答) | `false`   | houki-egov-mcp                 |
-| `ABBREVIATION_NOT_FOUND` | 略称辞書に該当なし                  | `false`   | houki-abbreviations 内蔵側     |
-| `TSUTATSU_NOT_FOUND`     | 通達が見つからない                  | `false`   | houki-nta-mcp                  |
-| `DOC_NOT_FOUND`          | 文書 (添付 PDF 含む) が見つからない | `false`   | houki-nta-mcp / pdf-reader-mcp |
+### 引数と呼び出しの誤り
 
-### 外部ソース由来
+| code | 意味 | houki-egov-mcp | houki-nta-mcp | pdf-reader-mcp |
+| --- | --- | --- | --- | --- |
+| `INVALID_ARGUMENT` | 引数が tools/list の inputSchema に合わない、または値の形がツールの受け付ける形でない。`detail.issues[]` に `{ path, message }` が入る | ○ | ○ | ○ |
+| `INVALID_ARTICLE_NUM` | 条番号・号番号の書き方が受け付ける形でない | ○ | | |
+| `UNKNOWN_TOOL` | 存在しないツール名を呼んだ | ○ | ○ | |
+| `OUT_OF_SCOPE` | このサーバーの管轄でない資料を求めた（別の MCP で取る） | ○ | ○ | |
 
-家族横断のため、`EGOV_*` のような MCP 固有プレフィックスは避け、`SOURCE_*` で統一する。詳細は `detail.url` で識別する。
+### 求めたものが無い
 
-| code                  | 意味                                              | retryable  | 主な発生 MCP                                                |
-| --------------------- | ------------------------------------------------- | ---------- | ----------------------------------------------------------- |
-| `SOURCE_API_ERROR`    | 外部 API (e-Gov / NTA / 各省庁) がエラー応答      | 状況による | houki-egov-mcp / houki-nta-mcp                              |
-| `SOURCE_TIMEOUT`      | 外部 API がタイムアウト                           | `true`     | houki-egov-mcp / houki-nta-mcp / pdf-reader-mcp (URL fetch) |
-| `SOURCE_RATE_LIMITED` | 外部 API がレート制限を返した (HTTP 429)          | `true`     | houki-egov-mcp / houki-nta-mcp                              |
-| `SOURCE_UNAVAILABLE`  | 外部リソースに接続不能 (DNS 失敗・ネットワーク断) | `true`     | 全 fetch 系 MCP                                             |
+| code | 意味 | houki-egov-mcp | houki-nta-mcp | pdf-reader-mcp |
+| --- | --- | --- | --- | --- |
+| `LAW_NOT_FOUND` | 法令が見つからない | ○ | | |
+| `ARTICLE_NOT_FOUND` | 法令・通達はあるが、求めた条・項・号（通達では条項）が無い | ○ | ○ | |
+| `RANGE_NOT_FOUND` | 求めた編・章・節、または附則の番号が無い | ○ | | |
+| `ATTACHMENT_NOT_FOUND` | 求めた添付ファイルが無い | ○ | | |
+| `ABBREVIATION_NOT_FOUND` | 略称辞書に無い名前を指定した | | ○ | |
+| `TSUTATSU_NOT_FOUND` | 求めた通達（改正通達・事務運営指針を含む）が、ローカル DB に無く国税庁サイトから取る先も無い | | ○ | |
+| `DOC_NOT_FOUND` | 求めた文書がローカル DB に無い（houki-nta-mcp）／ PDF が見つからない（pdf-reader-mcp） | | ○ | ○ |
 
-> **後方互換**: houki-egov-mcp の既存コード `EGOV_API_ERROR` / `EGOV_TIMEOUT` / `EGOV_RATE_LIMITED` は **`SOURCE_*` のサブセット**として位置づける。Skill 層は両方を解釈できるよう実装する (移行期間)。新規実装は `SOURCE_*` を使うこと。
+### 取得元（e-Gov・国税庁・PDF の URL）からの取得の失敗
 
-### コンテンツ問題 (PDF など)
+| code | 意味 | houki-egov-mcp | houki-nta-mcp | pdf-reader-mcp |
+| --- | --- | --- | --- | --- |
+| `SOURCE_API_ERROR` | 取得元がエラーを返した | ○ | ○ | ○ |
+| `SOURCE_TIMEOUT` | 取得が時間切れになった | ○ | ○ | ○ |
+| `SOURCE_RATE_LIMITED` | 取得元が回数制限を返した（HTTP 429） | ○ | ○ | |
+| `SOURCE_UNAVAILABLE` | 取得元に接続できない | ○ | | ○ |
 
-| code                      | 意味                                   | retryable | 主な発生 MCP   |
-| ------------------------- | -------------------------------------- | --------- | -------------- |
-| `INVALID_PDF`             | PDF が破損していて読めない             | `false`   | pdf-reader-mcp |
-| `ENCRYPTED_PDF`           | PDF が暗号化されておりパスワードが必要 | `false`   | pdf-reader-mcp |
-| `UNSUPPORTED_PDF_FEATURE` | 未対応の PDF 機能 (XFA フォーム等)     | `false`   | pdf-reader-mcp |
+### PDF の中身の問題
 
-### システム
+| code | 意味 | houki-egov-mcp | houki-nta-mcp | pdf-reader-mcp |
+| --- | --- | --- | --- | --- |
+| `INVALID_PDF` | PDF が壊れていて読めない | | | ○ |
+| `ENCRYPTED_PDF` | PDF が暗号化されていてパスワードが要る | | | ○ |
+| `UNSUPPORTED_PDF_FEATURE` | pdf-reader-mcp が扱えない PDF の機能（XFA フォームなど）を使っている | | | ○ |
+| `FILE_TOO_LARGE` | PDF が大きさの上限（50 MB）を超えている | | | ○ |
 
-| code             | 意味                            | retryable | 主な発生 MCP |
-| ---------------- | ------------------------------- | --------- | ------------ |
-| `UNKNOWN_TOOL`   | 存在しない tool 名が呼ばれた    | `false`   | 全 MCP       |
-| `INTERNAL_ERROR` | 内部エラー (バグ・予期せぬ例外) | `false`   | 全 MCP       |
+### サーバー内部の失敗
 
-## コード命名規則
+| code | 意味 | houki-egov-mcp | houki-nta-mcp | pdf-reader-mcp |
+| --- | --- | --- | --- | --- |
+| `INTERNAL_ERROR` | サーバー内部の失敗（処理中の想定外の例外、ページの解析の失敗など） | ○ | ○ | ○ |
 
-新しい code を追加する場合のルール:
+### 正本に載っているが返さない code
 
-1. **SCREAMING_SNAKE_CASE** で大文字英字+アンダースコア
-2. **MCP 固有プレフィックスを避ける** — 同種の問題は共通コードで揃える (例: `EGOV_TIMEOUT` → `SOURCE_TIMEOUT`)
-3. **意味のスコープを表す接頭辞**を使う:
-   - `INVALID_*` — 入力検証失敗
-   - `*_NOT_FOUND` — リソース未発見
-   - `SOURCE_*` — 外部リソース由来
-   - `INVALID_*` / `ENCRYPTED_*` / `UNSUPPORTED_*_FEATURE` — コンテンツ問題
-4. **新規 code を追加するときは本ドキュメントを更新** — Skill 層が解釈ロジックに反映できるように
+次の code は正本の表にありますが、表の版の MCP はどのツールからも返しません。一覧に残すか、取得の失敗を分けて返すかは各 MCP の Issue で決めます。
 
-## 利用例 — 各 MCP からの応答イメージ
+- houki-nta-mcp の `SOURCE_TIMEOUT` と `SOURCE_RATE_LIMITED`（時間切れも `SOURCE_API_ERROR` になる。houki-nta-mcp の `common_errors` の spec.md の「未決」9）
+- houki-egov-mcp の、どのツールも返さない code（houki-egov-mcp #57）
 
-### houki-egov-mcp の応答
+## `retryable` の読み方
 
-```json
-{
-  "error": "法令『消費税法』第3000条は存在しません",
-  "code": "ARTICLE_NOT_FOUND",
-  "hint": "条番号を get_toc で確認してください",
-  "next_actions": [
-    {
-      "action": "get_toc",
-      "reason": "目次を確認して正しい条番号を特定できます",
-      "example": { "law_name": "消費税法" }
-    }
-  ],
-  "retryable": false
-}
-```
+再試行してよいかは、code から決めずに応答の `retryable` を見ます。同じ code でも、MCP と場面によって `retryable` が違います（例: `INTERNAL_ERROR` は、処理中の想定外の例外では `retryable: true` が付くが、houki-nta-mcp がページの解析に失敗したときは付かない）。`retryable` が付かない応答の扱いと、再試行の回数は [`ERROR-HANDLING.md`](ERROR-HANDLING.md) に書きます。
 
-### houki-nta-mcp の応答
+## code の名前の付け方
 
-```json
-{
-  "error": "通達 docId=0025004-999 が見つかりません",
-  "code": "TSUTATSU_NOT_FOUND",
-  "hint": "nta_search_tsutatsu で正しい docId を検索してください",
-  "next_actions": [
-    {
-      "action": "nta_search_tsutatsu",
-      "reason": "キーワード検索で該当通達を探せます",
-      "example": { "keyword": "適格請求書" }
-    }
-  ],
-  "retryable": false
-}
-```
+MCP に新しい code を足すときに、family で揃えておきたい名前の付け方です。決めるのは各 MCP の仕様 PR です。
 
-### pdf-reader-mcp の応答
-
-```json
-{
-  "error": "PDF ファイルが破損しています",
-  "code": "INVALID_PDF",
-  "hint": "URL の取得元を確認するか、別の PDF を試してください",
-  "retryable": false,
-  "detail": { "url": "https://www.nta.go.jp/.../broken.pdf" }
-}
-```
-
-3 つの MCP は内部実装が独立しているが、`code` 語彙が揃っているため Skill 層は同じロジックで処理できる。
-
-## メンテナンス方針
-
-- **新しい code を追加するとき**: 本ドキュメントの該当カテゴリ表に追記し、`retryable` と発生 MCP を明記
-- **MCP 固有 code を共通化するとき**: 後方互換のため旧 code を残しつつ「サブセット」として注記
-- **新規 MCP が family に加わるとき**: その MCP がどのカテゴリの code を発する可能性があるか棚卸しし、必要なら新コードを追加
-- **`retryable` の判定が変わったとき**: ERROR-HANDLING.md の retry ポリシーと整合を取る
+1. 大文字の英字・数字とアンダースコアで書く（`SCREAMING_SNAKE_CASE`）
+2. MCP の名前を接頭辞にしない。取得元の失敗は、どの MCP でも `SOURCE_*` にする。どの取得元かは `detail.url` で分かる
+3. 種類を表す形を使う: 入力の誤りは `INVALID_*`、無いものは `*_NOT_FOUND`、取得元の失敗は `SOURCE_*`、PDF の中身の問題は `INVALID_*` / `ENCRYPTED_*` / `UNSUPPORTED_*_FEATURE`
 
 ## 関連
 
-- [`ERROR-HANDLING.md`](ERROR-HANDLING.md) — エラーを受け取ったときの解釈・next_actions・メッセージ整形指針
-- [houki-egov-mcp の src/errors.ts](https://github.com/shuji-bonji/houki-egov-mcp/blob/main/src/errors.ts) — リファレンス実装 (本語彙の起点)
+- [`ERROR-HANDLING.md`](ERROR-HANDLING.md) — エラーを受け取ったときの Skill の振る舞い（code ごとの対応・再試行・メッセージの書き方）
+- [`../examples/error-recovery-patterns.md`](../examples/error-recovery-patterns.md) — エラーから別の経路に切り替える例

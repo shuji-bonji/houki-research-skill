@@ -411,7 +411,7 @@ retry も失敗した場合は **法律本文だけで部分回答** + 通達は
 
 ## 関連
 
-- [`../docs/ERROR-CODES.md`](../docs/ERROR-CODES.md) — code 語彙の正典
+- [`../docs/ERROR-CODES.md`](../docs/ERROR-CODES.md) — family の MCP が返す code の一覧（正本は各 MCP の仕様）
 - [`../docs/ERROR-HANDLING.md`](../docs/ERROR-HANDLING.md) — 解釈ポリシー (本書はその実例集)
 - [`../docs/CITATION.md`](../docs/CITATION.md) — フォールバック時の citation 整形ルール
 - [`invoice-registration.md`](invoice-registration.md) — happy path の few-shot

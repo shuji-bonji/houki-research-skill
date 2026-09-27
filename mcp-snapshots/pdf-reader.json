@@ -1,0 +1,258 @@
+{
+  "$comment": "自動生成（scripts/update-mcp-snapshots.mjs）。手で編集しないでください",
+  "server": "pdf-reader",
+  "npm": "@shuji-bonji/pdf-reader-mcp",
+  "version": "0.15.5",
+  "tools": [
+    {
+      "name": "compare_structure",
+      "properties": [
+        "file_path_1",
+        "file_path_2",
+        "response_format"
+      ],
+      "required": [
+        "file_path_1",
+        "file_path_2"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "extract_structured_text",
+      "properties": [
+        "file_path",
+        "include_bbox",
+        "pages",
+        "response_format",
+        "roles"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "extract_tables",
+      "properties": [
+        "file_path",
+        "pages",
+        "response_format"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "get_metadata",
+      "properties": [
+        "file_path",
+        "response_format"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "get_page_count",
+      "properties": [
+        "file_path"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "inspect_annotations",
+      "properties": [
+        "file_path",
+        "pages",
+        "response_format"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "inspect_fonts",
+      "properties": [
+        "file_path",
+        "response_format"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "inspect_signatures",
+      "properties": [
+        "file_path",
+        "response_format"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "inspect_structure",
+      "properties": [
+        "file_path",
+        "response_format"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "inspect_tags",
+      "properties": [
+        "file_path",
+        "response_format"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "locate_objects",
+      "properties": [
+        "file_path",
+        "object_numbers",
+        "response_format"
+      ],
+      "required": [
+        "file_path",
+        "object_numbers"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "read_images",
+      "properties": [
+        "file_path",
+        "format",
+        "max_height",
+        "max_width",
+        "pages",
+        "quality"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "read_text",
+      "properties": [
+        "compact_whitespace",
+        "file_path",
+        "pages",
+        "response_format",
+        "split_columns"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "read_url",
+      "properties": [
+        "compact_whitespace",
+        "pages",
+        "response_format",
+        "split_columns",
+        "url"
+      ],
+      "required": [
+        "url"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "render_page",
+      "properties": [
+        "dpi",
+        "file_path",
+        "format",
+        "max_width",
+        "pages",
+        "quality"
+      ],
+      "required": [
+        "file_path",
+        "pages"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "search_text",
+      "properties": [
+        "context_chars",
+        "file_path",
+        "max_results",
+        "pages",
+        "query",
+        "response_format"
+      ],
+      "required": [
+        "file_path",
+        "query"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "summarize",
+      "properties": [
+        "file_path",
+        "response_format"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "validate_metadata",
+      "properties": [
+        "file_path",
+        "response_format"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "validate_tagged",
+      "properties": [
+        "file_path",
+        "response_format"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    }
+  ],
+  "errorCodesSource": "@shuji-bonji/pdf-reader-mcp@0.15.5 の dist/errors.d.ts（LawErrorCode）",
+  "errorCodes": [
+    "DOC_NOT_FOUND",
+    "ENCRYPTED_PDF",
+    "FILE_TOO_LARGE",
+    "INTERNAL_ERROR",
+    "INVALID_ARGUMENT",
+    "INVALID_PDF",
+    "SOURCE_API_ERROR",
+    "SOURCE_TIMEOUT",
+    "SOURCE_UNAVAILABLE",
+    "UNSUPPORTED_PDF_FEATURE"
+  ]
+}

@@ -250,7 +250,7 @@ houki-nta-mcp が v0.16.x 以前だと `index_status` は付かない。その�
 
 ### 鉄則 5: エラー時はフォールバックして citation で注記する
 
-各 MCP は family 共通の `code` 語彙でエラーを返す。LLM はエラーコードをユーザーに直接見せず、[`docs/ERROR-HANDLING.md`](docs/ERROR-HANDLING.md) のフォールバック方針に従って代替経路を試み、citation で「PDF 抽出失敗のため HTML で代替」のように注記する。コード語彙そのものは [`docs/ERROR-CODES.md`](docs/ERROR-CODES.md) を、3 MCP 横断の具体的フォールバック例は [`examples/error-recovery-patterns.md`](examples/error-recovery-patterns.md) を参照。
+各 MCP は family 共通の `code` 語彙でエラーを返す。LLM はエラーコードをユーザーに直接見せず、[`docs/ERROR-HANDLING.md`](docs/ERROR-HANDLING.md) のフォールバック方針に従って代替経路を試み、citation で「PDF 抽出失敗のため HTML で代替」のように注記する。どの MCP がどの code を返すかは [`docs/ERROR-CODES.md`](docs/ERROR-CODES.md) の一覧（正本は各 MCP の仕様）を、3 MCP 横断の具体的フォールバック例は [`examples/error-recovery-patterns.md`](examples/error-recovery-patterns.md) を参照。
 
 | 典型エラー                              | 対応                                       |
 | --------------------------------------- | ------------------------------------------ |
@@ -316,7 +316,7 @@ workflow は **問いの形** で選ぶ。利用者が名乗る立場 (エンジ
 | 私の場合はどうなるか (個別の事案) | 鉄則 1 の応答型 (返すもの / 返さないもの) | **ここが線。** 条文・通達・論点までを返し、結論・可否・金額は返さない |
 | この改正はいつから、何が変わるか | `workflows/revision-tracking.md` (予定。それまでは `get_law_revisions` と tax-research の ⑤〜⑦) | 線に近づかない |
 
-MCP を組み込む開発者は問いを投げる利用者ではなく、契約を読む利用者なので workflow は要らない。[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) / [`docs/ERROR-CODES.md`](docs/ERROR-CODES.md) / 各 MCP の `tools/list` の `inputSchema` を参照する。
+MCP を組み込む開発者は問いを投げる利用者ではなく、契約を読む利用者なので workflow は要らない。[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) / [`docs/ERROR-CODES.md`](docs/ERROR-CODES.md)（code の一覧）/ 各 MCP の `specs/current/`（ツールごとの仕様とエラーの code の正本）/ 各 MCP の `tools/list` の `inputSchema` を参照する。
 
 具体的なユースケースは [`workflows/`](workflows/) を参照:
 
@@ -343,7 +343,7 @@ MCP を組み込む開発者は問いを投げる利用者ではなく、契約�
 - 新しい houki-\* MCP が family に加わったら、本 SKILL.md の「利用する MCP ファミリー」表を更新する
 - 業法独占規定の境界が判例等で更新されたら [`docs/BUSINESS-LAW.md`](docs/BUSINESS-LAW.md) を更新する
 - `extract_tables` のような新 tool が出たら、PDF 抽出の選択ガイドを更新する
-- 新しいエラー `code` が family のいずれかの MCP に追加されたら [`docs/ERROR-CODES.md`](docs/ERROR-CODES.md) と [`docs/ERROR-HANDLING.md`](docs/ERROR-HANDLING.md) を更新する
+- 新しいエラー `code` が family のいずれかの MCP の仕様（`specs/current/common_errors/spec.md`）に加わったら、`scripts/mcp-refs.config.json` の版を上げて [`docs/ERROR-CODES.md`](docs/ERROR-CODES.md) の一覧と [`docs/ERROR-HANDLING.md`](docs/ERROR-HANDLING.md) を更新する。一覧と各 MCP のずれは CI（`scripts/check-mcp-refs.mjs`）が示す
 - 典型ワークフロー / 具体例は実利用で蓄積されたパターンを追加していく
 
 ## 関連リンク

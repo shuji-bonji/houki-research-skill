@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.15.0] - 2026-09-28
+
+**minor リリース** — エラーの `code` の正本を各 MCP の仕様に移し、`docs/ERROR-CODES.md` をそのまとめの一覧にした。あわせて、文書に書いたツールの呼び出し例と code が MCP の実物と合っているかを CI で確かめるようにした。
+
+### Changed
+
+- **`docs/ERROR-CODES.md` の位置づけ**: 「family 共通エラー語彙の正典」から「各 MCP の `code` をまとめた一覧」に変えた。正本は houki-egov-mcp・houki-nta-mcp の `specs/current/common_errors/spec.md` の「エラーの code」の表と、pdf-reader-mcp の型 `LawErrorCode`。表は code ごとに、どの MCP が返すかを列で示す形にした
+- **一覧の中身を正本に合わせた**: `LAW_NOT_FOUND` は houki-egov-mcp だけ（houki-nta-mcp は返さない）、`ARTICLE_NOT_FOUND` は houki-nta-mcp も返す、`ABBREVIATION_NOT_FOUND` は houki-nta-mcp、`SOURCE_UNAVAILABLE` は houki-egov-mcp と pdf-reader-mcp、`UNKNOWN_TOOL` と `OUT_OF_SCOPE` は pdf-reader-mcp には無い。pdf-reader-mcp の `FILE_TOO_LARGE` を足した。houki-egov-mcp の旧 code（`EGOV_*`）の後方互換の注記は、今の版が返さないので外した
+- **`retryable` の列を外した**: 同じ code でも MCP と場面で `retryable` が違う（`INTERNAL_ERROR` など）ので、code から決めずに応答の `retryable` を見る、と書いた
+- **応答の例を外した**: 実際に呼んで確かめたものではなかった。例は `examples/error-recovery-patterns.md` を見る
+- **正典と書いていた箇所**: `README.md`・`SKILL.md`・`docs/ERROR-HANDLING.md`・`examples/error-recovery-patterns.md`・`plugin.json` の説明を、一覧と正本の関係に合わせて書き直した
+
+### Fixed
+
+- **`docs/ERROR-HANDLING.md` のツール名**: `*_NOT_FOUND` のときの検索ツールが `search_tsutatsu` になっていた。正しくは `nta_search_tsutatsu`（新しい検査で見つかった）
+
+### Added
+
+- **CI（`.github/workflows/ci.yml`）**: 2 つの検査を push と PR で実行する
+  - ツール名・引数名: 文書の呼び出し例（JSON の `tool` / `args`、`next_actions` の `action` / `example`、本文の `ツール名 { 引数 }`）のツール名と引数名が、各 MCP の `tools/list` の応答の `inputSchema` にあるか。`delegate_to_mcp` の `example` の `mcp` と `tool` は引数に数えない
+  - エラーの code: 各 MCP の正本と `docs/ERROR-CODES.md` の表が一致するか、文書の本文に出てくる code が表にあるか
+- **`scripts/`**: `check-mcp-refs.mjs`（上の検査）、`update-mcp-snapshots.mjs`（`scripts/mcp-refs.config.json` の版の MCP を npm から入れて起動し、`tools/list` と code の正本を `mcp-snapshots/` に写す。`--check` でコミット済みと比べる）、`node:test` のテスト 19 件。依存パッケージは無い。plugin（`.plugin`）には含めない
+- **`mcp-snapshots/`**: 突き合わせの基準（houki-egov-mcp v0.15.2 / houki-nta-mcp v0.21.1 / pdf-reader-mcp v0.15.5）
+- **週 1 回の確認（`.github/workflows/mcp-drift.yml`）**: npm の最新版の MCP で同じ検査を実行する
+
+### なぜ変えたか
+
+houki-egov-mcp と houki-nta-mcp の code は、`specs/current/common_errors/spec.md` で仕様 ID とテストに守られるようになった。この Skill の `ERROR-CODES.md` も「正典」としていたため正本が 2 か所になり、実際に `LAW_NOT_FOUND` の発生元などが食い違っていた。また、これまでの Skill の不具合（v0.2.0 の引数名の誤り、#17 の例文）は、文書に書いた呼び出しが MCP の実物と合わないものだった。どちらも MCP の実物を基準に機械的に確かめられるので、CI に置いた。
+
 ## [0.14.1] - 2026-09-21
 
 **patch リリース** — `examples/invoice-registration.md` と `workflows/tax-research.md` のステップ ③ の例文を、houki-egov-mcp v0.15.1 で実際に呼んで返ったとおりに直した（#17）。
