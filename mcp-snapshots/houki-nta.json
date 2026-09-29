@@ -2,7 +2,7 @@
   "$comment": "自動生成（scripts/update-mcp-snapshots.mjs）。手で編集しないでください",
   "server": "houki-nta",
   "npm": "@shuji-bonji/houki-nta-mcp",
-  "version": "0.21.1",
+  "version": "0.21.2",
   "tools": [
     {
       "name": "nta_get_bunshokaitou",
@@ -176,7 +176,7 @@
       "acceptsUnknownArgs": false
     }
   ],
-  "errorCodesSource": "https://github.com/shuji-bonji/houki-nta-mcp/blob/v0.21.1/specs/current/common_errors/spec.md",
+  "errorCodesSource": "https://github.com/shuji-bonji/houki-nta-mcp/blob/v0.21.2/specs/current/common_errors/spec.md",
   "errorCodes": [
     "ABBREVIATION_NOT_FOUND",
     "ARTICLE_NOT_FOUND",

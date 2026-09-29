@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.1] - 2026-09-29
+
+**patch リリース** — 文書は変えていない。突き合わせる MCP の版を houki-egov-mcp 0.15.3・houki-nta-mcp 0.21.2 に上げた。
+
+### Changed
+
+- **`scripts/mcp-refs.config.json` の版**: houki-egov-mcp 0.15.2 → 0.15.3、houki-nta-mcp 0.21.1 → 0.21.2。どちらも npm の説明・keywords・README だけの版で、`mcp-snapshots/` の差分は `version` と `errorCodesSource` の URL だけ（ツール 14・code 13 / ツール 14・code 11 のまま）。`node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 192 か所、code 114 か所）。houki-hub `docs/notes/2026-09-29-plan-spec-issues.md` の段階 0
+
 ## [0.15.0] - 2026-09-28
 
 **minor リリース** — エラーの `code` の正本を各 MCP の仕様に移し、`docs/ERROR-CODES.md` をそのまとめの一覧にした。あわせて、文書に書いたツールの呼び出し例と code が MCP の実物と合っているかを CI で確かめるようにした。
