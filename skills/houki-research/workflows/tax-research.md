@@ -89,7 +89,7 @@ sequenceDiagram
 // → { formal: "消費税法基本通達", source_mcp_hint: "houki-nta", ... }
 ```
 
-`source_mcp_hint` が `"egov"` なら houki-egov-mcp を、`"nta"` なら houki-nta-mcp を主軸にする。
+`resolved.source_mcp_hint` が `"houki-egov"` なら houki-egov-mcp を、`"houki-nta"` なら houki-nta-mcp を主軸にする。
 
 houki-nta-mcp v0.23.0 以上では、houki-egov の管轄のエントリ（`in_scope: false`）に `next_actions` の `delegate_to_mcp`（`example: { mcp: "houki-egov" }`）が付くので、それに従って houki-egov-mcp で引く。houki-hub family にまだ MCP の無い管轄では `next_actions` は付かず、`hint` が「対応する MCP サーバーはまだありません」になる。
 

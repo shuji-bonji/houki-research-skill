@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.17.1] - 2026-10-03
+
+**patch リリース** — `workflows/tax-research.md` の 1 文を、houki-nta-mcp の `resolve_abbreviation` の仕様に合わせた（#24）。突き合わせる MCP の版と `mcp-snapshots/` は変えていない。
+
+### Fixed
+
+- **`workflows/tax-research.md` のステップ ②**: `source_mcp_hint` の値を `"egov"` / `"nta"` と書いていたのを、応答の値どおり `"houki-egov"` / `"houki-nta"` にした。フィールドも `resolved.source_mcp_hint` と書いた（houki-nta-mcp `specs/current/resolve_abbreviation/spec.md` の応答の表と SPEC-NTA-RESOLVE-ABBREVIATION-003）。ほかの文書に同じ書き方は無い
+
 ## [0.17.0] - 2026-10-03
 
 **minor リリース** — houki-egov-mcp 0.17.0・houki-nta-mcp 0.23.0 への追随。両 MCP の応答の形の変更（T4: 値の無いキーが `null` で付く、`get_law_revisions` の並び）と、`INTERNAL_ERROR` / `UNKNOWN_TOOL` の `retryable: false`（T5）に、手順と code の扱いを合わせた。houki-hub `docs/DECISIONS.md`（2026-09-29）の T2 の「互換の扱い」に従い、MCP を publish した日に出す。
