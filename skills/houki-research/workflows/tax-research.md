@@ -91,6 +91,8 @@ sequenceDiagram
 
 `source_mcp_hint` が `"egov"` なら houki-egov-mcp を、`"nta"` なら houki-nta-mcp を主軸にする。
 
+houki-nta-mcp v0.23.0 以上では、houki-egov の管轄のエントリ（`in_scope: false`）に `next_actions` の `delegate_to_mcp`（`example: { mcp: "houki-egov" }`）が付くので、それに従って houki-egov-mcp で引く。houki-hub family にまだ MCP の無い管轄では `next_actions` は付かず、`hint` が「対応する MCP サーバーはまだありません」になる。
+
 ### ステップ ③: 法律本文を取得
 
 法的根拠 (国会制定の法律) を houki-egov-mcp で取得:
@@ -122,7 +124,7 @@ sequenceDiagram
 //   実測: houki-egov-mcp v0.15.1（2026-09-21）
 ```
 
-`get_law` の応答は条文本文と `meta`（`law_id` / `title` / `law_num` / `retrieved_at` / `url`）で、`legal_status` は付かない。法律が国民を拘束すること（`binds_citizens: true`）は `explain_law_type { "name": "法律" }` の応答を根拠にする（houki-egov-mcp v0.15.1、2026-09-21 実測。`binds_courts` は返さない）。
+`get_law` の応答は条文本文と `meta`（`law_id` / `title` / `law_num` / `retrieved_at` / `url`。houki-egov-mcp v0.17.0 以上では `at` も常にあり、時点を渡さなかったときは `null`）で、`legal_status` は付かない。法律が国民を拘束すること（`binds_citizens: true`）は `explain_law_type { "name": "法律" }` の応答を根拠にする（houki-egov-mcp v0.15.1、2026-09-21 実測。`binds_courts` は返さない）。
 
 `search_fulltext` の応答で `source` が `"api-fallback"` なら本文検索は行われていない（`search_law` の結果が `fallback` に入っている）。その場合は `next_actions` の `bulk_download_everything`（`houki-egov-mcp --bulk-download-everything`）をユーザーに案内し、回答には「法令名の一致で探した」と書く。
 
@@ -217,6 +219,8 @@ houki-nta-mcp v0.12.0 の応答の抜粋 (2026-09-11、`{ "topic": "shohi", "cat
 citation では、引いた条文を「法律 (法的根拠)」、通達を「行政解釈」、質疑応答事例を「参考情報 (拘束力なし)」に置き、`qa.basisDate` と `qa.notice` の趣旨を注に書く ([`docs/CITATION.md`](../docs/CITATION.md))。
 
 タックスアンサー (`nta_get_tax_answer`) には構造化された根拠法令が無い。本文の「根拠法令等」の節を読み、挙がっている法令を `get_law` で引く。
+
+8xxx 帯の docId は `nta_get_tax_answer` で取れない（`INVALID_ARGUMENT` で断られ、DB も引かない）。`nta_search_tax_answer` は 8xxx 帯の記事も返し、先頭が 8xxx でも `next_actions` は `nta_get_tax_answer` を案内する（houki-nta-mcp v0.23.0）ので、その案内には従わず、`results[].sourceUrl` を案内する。
 
 ### ステップ ⑤: 改正履歴を検索
 

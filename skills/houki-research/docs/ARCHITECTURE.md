@@ -117,9 +117,10 @@ flowchart LR
 | `base_laws` / `base_laws_by_tsutatsu` | 基本通達が解釈している法律・施行令・施行規則 (get は配列、search は通達ごとの対応表) | houki-nta-mcp v0.11.0+ |
 | `next_actions` (成功時) | 次に呼ぶ tool の案内。通達の応答では houki-egov-mcp の `get_law` への `delegate_to_mcp`。質疑応答事例 (`nta_get_qa`) では条・項・号入りの `get_law` と `nta_get_tsutatsu` | houki-nta-mcp v0.11.0+ (`nta_get_qa` は v0.12.0+) / houki-egov-mcp (`search_fulltext` の `api-fallback`) |
 | `related_laws` / `related_tsutatsu` | 質疑応答事例の【関係法令通達】を法令 (`law_name` / `article` / `paragraph` / `item` / `appendix` / `raw`) と通達 (`name` / `clause` / `raw`) に分けたもの。枝番号の号は `item: "12の8"` の文字列 (v0.14.0+) | houki-nta-mcp v0.12.0+ (`nta_get_qa`、`format: "json"`) |
-| `qa.notice` / `qa.basisDate` | 質疑応答事例のページ下部の注記と、その作成基準日 | houki-nta-mcp v0.12.0+ |
+| `qa.notice` / `qa.basisDate` | 質疑応答事例のページ下部の注記と、その作成基準日。値が無ければ `null` | houki-nta-mcp v0.12.0+ |
+| `results[].issuedAt` / `results[].basisDate` / `taxAnswer.basisDate` | 検索結果の発出日 (改正通達・事務運営指針・文書回答事例。質疑応答事例・タックスアンサーは常に `null`) と、タックスアンサーの記事の「法令時点」から読んだ日付 (発出日ではない。ほかの種別は常に `null`)。値が無いときもキーは持つ | houki-nta-mcp v0.23.0+ (`basisDate`。`issuedAt` はそれ以前からあり、値が無いときはキーが付かなかった) |
 | `source` | その応答をローカル DB (`"db"`) と取得元 (`"live"`) のどちらから返したか。`"db"` のとき `fetched_at` は取り込んだ日時 | houki-nta-mcp の取得ツール (`nta_get_qa` / `nta_get_tax_answer` は v0.16.0+) / houki-egov-mcp の `search_fulltext` (DB が無いときは `"api-fallback"`) |
-| `index_status` / `orphaned_at` | 国税庁の索引から外れた文書の印 (`"removed_from_index"`) と、それを最初に確認した日時。索引にある文書には付かない | houki-nta-mcp v0.17.0+ (`nta_search_*` の各件と `nta_get_*`) |
+| `index_status` / `orphaned_at` | 国税庁の索引から外れた文書の印 (`"removed_from_index"`) と、それを最初に確認した日時。索引にある文書では `null` (v0.22.x まではキーが付かない) | houki-nta-mcp v0.17.0+ (`nta_search_*` の各件と `nta_get_*`) |
 
 これらが揃うことで、Skill 層は「**どの情報をどの順序で引用するか**」を機械的に決められる。
 

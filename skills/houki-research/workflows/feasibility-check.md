@@ -224,6 +224,8 @@ houki-nta-mcp v0.18.x の基本通達は消基通・所基通・法基通・相�
 | `amendment_enforcement_date` | 施行日。`amendment_enforcement_comment` に「政令で定める日」とあれば、この日付は上限の見込みで確定日ではない |
 | `amendment_law_title` | どの改正法か。改正前後の差分が要るなら `revision-tracking.md`（予定）へ |
 
+`revisions` は施行日の新しい順に並び、まだ施行されていない改正も含む。`latest` はこの順の先頭から数えるので、**先頭が現行の版とは限らない**。いま効力のある版は `current_revision_status` が `"CurrentEnforced"` の要素で見る（houki-egov-mcp v0.17.0 以上。並べ替えはツールが行う）。v0.17.0 以上では `revisions[]` の 8 つのキーは常にあり、e-Gov に値が無いキーは `null` になる。
+
 未施行の改正があるときは、`get_law` の `at` にその施行日を入れると、その版の条文が取れる（`{ "law_name": "電帳法", "article": "7", "at": "2027-01-01" }`）。取った条が現行と同じなら「この条は変わらない」と書ける。**どの条が変わるか**は本ワークフローでは追わない（`revision-tracking.md`）。
 
 ### ステップ ⑦: 制約の一覧を返す

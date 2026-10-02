@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.17.0] - 2026-10-03
+
+**minor リリース** — houki-egov-mcp 0.17.0・houki-nta-mcp 0.23.0 への追随。両 MCP の応答の形の変更（T4: 値の無いキーが `null` で付く、`get_law_revisions` の並び）と、`INTERNAL_ERROR` / `UNKNOWN_TOOL` の `retryable: false`（T5）に、手順と code の扱いを合わせた。houki-hub `docs/DECISIONS.md`（2026-09-29）の T2 の「互換の扱い」に従い、MCP を publish した日に出す。
+
+### Changed
+
+- **`scripts/mcp-refs.config.json` の版**: houki-egov-mcp 0.16.0 → 0.17.0、houki-nta-mcp 0.22.0 → 0.23.0。`mcp-snapshots/` の差分は `version` と `errorCodesSource` の URL だけ。ツールはどちらも 14、code は 14 / 11 のままで、ツール名・引数名も変わらない
+- **`docs/ERROR-CODES.md` の「`retryable` の読み方」**: 例を `INTERNAL_ERROR` から `SOURCE_API_ERROR`（5xx は `true`、houki-egov-mcp の 429 以外の 4xx は `false`）に替えた。`INTERNAL_ERROR` と `UNKNOWN_TOOL` は、両 MCP ともどの場面でも `retryable: false` であることを書いた（SPEC-EGOV-COMMON-ERRORS-002・007、SPEC-NTA-COMMON-ERRORS-002・006・009）
+- **`docs/ERROR-HANDLING.md` の `INTERNAL_ERROR` / `UNKNOWN_TOOL` の節と基本フローの図**: 「1 回だけ retry する」を外し、「再試行せず、呼んだツール名・引数・応答の `error` / `detail.cause` を添えて報告を勧める」にした。`next_actions` の `retry_later` は付かなくなった（SPEC-EGOV-COMMON-ERRORS-018、SPEC-NTA-COMMON-ERRORS-006）
+- **`SKILL.md` の「索引から消えた文書」の節**: 「`index_status: "removed_from_index"` と `orphaned_at` が付いていたら」を「`index_status` が `"removed_from_index"` なら」にした。houki-nta-mcp 0.23.0 から、索引にある文書にも `index_status: null` / `orphaned_at: null` が付く（SPEC-NTA-SEARCH-RULES-011）。`docs/ARCHITECTURE.md` の表と `docs/CITATION.md` の原則 6 も同じ書き方にした
+- **`docs/ARCHITECTURE.md` の表**: `qa.basisDate` の行に `null` を足し、`results[].issuedAt` / `results[].basisDate` / `taxAnswer.basisDate` の行を足した（SPEC-NTA-SEARCH-RULES-015、SPEC-NTA-GET-TAX-ANSWER-008）
+- **`workflows/feasibility-check.md` のステップ ⑥ と `examples/electronic-bookkeeping.md` の ⑥**: `get_law_revisions` の `revisions` は施行日の新しい順（未施行の改正を含む）で、`latest` はその先頭から数えること、いま効力のある版は `current_revision_status` が `"CurrentEnforced"` の要素であることを書いた（SPEC-EGOV-GET-LAW-REVISIONS-002・009・016・017）
+- **`workflows/tax-research.md`**: `get_law` の `meta` に `at`（渡さないときは `null`）があることを足した（SPEC-EGOV-GET-LAW-020）。`resolve_abbreviation` で houki-egov の管轄のエントリに `next_actions` の `delegate_to_mcp` が付くことを足した（SPEC-NTA-RESOLVE-ABBREVIATION-003）
+- **README の推奨最小バージョンの表**: houki-egov-mcp に v0.17.0、houki-nta-mcp に v0.23.0 の変更を足した
+
+### Added
+
+- **`docs/CITATION.md` の原則 7**: `basisDate` はタックスアンサーの記事の「法令時点」で発出日ではないので、発出日として引用しない。`issuedAt` が `null` の文書は発出日を書かない。`meta.at` が `null` なら現行の版として書く
+- **`SKILL.md` と `workflows/tax-research.md` のタックスアンサーの手順**: 8xxx 帯の docId は `nta_get_tax_answer` で取れない（`INVALID_ARGUMENT`。SPEC-NTA-GET-TAX-ANSWER-002）。`nta_search_tax_answer` の `next_actions`（SPEC-NTA-SEARCH-TAX-ANSWER-006）が 8xxx を案内しても従わず、`results[].sourceUrl` を案内する。MCP 側の扱いは houki-nta-mcp の別の Issue で決めるので、ここでは今の動きだけを書いた
+
+`node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 212 か所、code 133 か所）。
+
 ## [0.16.1] - 2026-10-02
 
 **patch リリース** — 0.16.0 のときに対象の外として残した、エラーの扱いの記述 4 件を、houki-egov-mcp 0.16.0・houki-nta-mcp 0.22.0 の仕様に合わせた。突き合わせる MCP の版と `mcp-snapshots/` は変えていない。

@@ -2,7 +2,7 @@
   "$comment": "自動生成（scripts/update-mcp-snapshots.mjs）。手で編集しないでください",
   "server": "houki-egov",
   "npm": "@shuji-bonji/houki-egov-mcp",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "tools": [
     {
       "name": "explain_law_type",
@@ -185,7 +185,7 @@
       "acceptsUnknownArgs": false
     }
   ],
-  "errorCodesSource": "https://github.com/shuji-bonji/houki-egov-mcp/blob/v0.16.0/specs/current/common_errors/spec.md",
+  "errorCodesSource": "https://github.com/shuji-bonji/houki-egov-mcp/blob/v0.17.0/specs/current/common_errors/spec.md",
   "errorCodes": [
     "ARTICLE_NOT_FOUND",
     "ATTACHMENT_NOT_FOUND",

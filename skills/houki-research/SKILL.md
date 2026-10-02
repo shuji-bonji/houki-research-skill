@@ -163,6 +163,8 @@ sequenceDiagram
 
 タックスアンサー (`nta_get_tax_answer`) には構造化された根拠法令が無い。本文の「根拠法令等」の節を読み、そこに挙がっている法令を `get_law` で引く。
 
+8xxx 帯の docId は `nta_get_tax_answer` で取れない（`INVALID_ARGUMENT` で断られ、DB も引かない）。`nta_search_tax_answer` は 8xxx 帯の記事も返し、先頭が 8xxx でも `next_actions` は `nta_get_tax_answer` を案内する（houki-nta-mcp v0.23.0）ので、その案内には従わず、`results[].sourceUrl` を案内する。
+
 houki-nta-mcp が v0.10.x 以前だと `base_laws` は無く、v0.11.x 以前だと `related_laws` は無い。そのときは本文の参照から法令名を自分で補う。
 
 #### 添付 PDF に当たったら、読み方を応答から取り、手元の読み手で読む (houki-nta-mcp v0.19.0 以上)
@@ -207,12 +209,12 @@ houki-nta-mcp が v0.18.x 以前だと `read_strategy` / `layout_note` / `saved`
 
 #### 索引から消えた文書は現行の取扱いとして引用しない (houki-nta-mcp v0.17.0 以上)
 
-`nta_search_*` の結果の各件と `nta_get_*` の応答に `index_status: "removed_from_index"` と `orphaned_at` が付いていたら、その文書は国税庁の索引から外れている。houki-nta-mcp は削除せず残しているので、過去の課税期間を調べるときは引ける。**現在の取扱いを答える根拠にはしない。**
+`nta_search_*` の結果の各件と `nta_get_*` の応答の `index_status` が `"removed_from_index"` なら、その文書は国税庁の索引から外れている（`orphaned_at` に、それを最初に確認した日時が入る）。houki-nta-mcp v0.23.0 以上では、索引にある文書にも `index_status: null` / `orphaned_at: null` が付くので、キーの有無ではなく値で見る。houki-nta-mcp は削除せず残しているので、過去の課税期間を調べるときは引ける。**現在の取扱いを答える根拠にはしない。**
 
 - 検索結果から除外はされない。索引にある文書と同じ形で並び、`search_notes` に「N 件のうち M 件は索引から外れています」の行が入る
 - `sourceUrl` は 404 になることがある。本文はローカル DB に残っているので `nta_get_*` では読める
 - 現在の取扱いを問われているなら、同じ論点の現行の文書を探し直す。見つからなければ「索引から外れた文書しか見つからなかった」と書き、断定しない
-- citation では、印が付いていることと `orphaned_at` を注に残す ([`docs/CITATION.md`](docs/CITATION.md))
+- citation では、`index_status` が `"removed_from_index"` であることと `orphaned_at` を注に残す ([`docs/CITATION.md`](docs/CITATION.md))
 
 `freshness` の `stale` / `outdated` とは別のことを指す。`freshness` は「最後に取得してから日が経った」で、`index_status` は「国税庁の索引から外れた」。ローカル DB が新しくても印は付く。
 

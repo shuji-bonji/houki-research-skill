@@ -112,7 +112,7 @@ houki-egov-mcp は v0.16.0 で、どのツールも返さない code を型か�
 
 ## `retryable` の読み方
 
-再試行してよいかは、code から決めずに応答の `retryable` を見ます。同じ code でも、MCP と場面によって `retryable` が違います（例: `INTERNAL_ERROR` は、処理中の想定外の例外では `retryable: true` が付くが、houki-nta-mcp がページの解析に失敗したときは付かない）。`retryable` が付かない応答の扱いと、再試行の回数は [`ERROR-HANDLING.md`](ERROR-HANDLING.md) に書きます。
+再試行してよいかは、code から決めずに応答の `retryable` を見ます。同じ code でも、MCP と場面によって `retryable` が違います（例: `SOURCE_API_ERROR` は、5xx では `retryable: true` だが、houki-egov-mcp が 429 以外の 4xx を受けたときは `retryable: false`）。`INTERNAL_ERROR` と `UNKNOWN_TOOL` は、houki-egov-mcp v0.17.0・houki-nta-mcp v0.23.0 以上では、どの場面でも `retryable: false` です（処理中の想定外の例外も、ページの解析の失敗も）。`retryable` が付かない応答の扱いと、再試行の回数は [`ERROR-HANDLING.md`](ERROR-HANDLING.md) に書きます。
 
 ## code の名前の付け方
 

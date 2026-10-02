@@ -12,7 +12,7 @@ flowchart TB
   p1 -->|SOURCE_TIMEOUT<br/>SOURCE_RATE_LIMITED<br/>SOURCE_UNAVAILABLE| f3[retry: 1〜数回<br/>失敗時はユーザーに状況説明]
   p1 -->|SOURCE_API_ERROR| f4[detail.status を見て<br/>retry/fallback 判断]
   p1 -->|INVALID_PDF<br/>ENCRYPTED_PDF<br/>UNSUPPORTED_*| f5[PDF を諦めて<br/>HTML 本文や別ソースに切替]
-  p1 -->|INTERNAL_ERROR| f6[retryable を見る<br/>true なら 1 回だけ retry<br/>それでも失敗なら報告 + 別経路]
+  p1 -->|INTERNAL_ERROR| f6[retry しない<br/>再現手順を添えて報告 + 別経路]
 
   classDef ok fill:#d4edda,stroke:#28a745,color:#333
   classDef warn fill:#fff3cd,stroke:#ffc107,color:#333
@@ -128,8 +128,8 @@ houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `n
 | 項目               | 内容                                                                                                   |
 | ------------------ | ------------------------------------------------------------------------------------------------------ |
 | 原因               | `INTERNAL_ERROR`: MCP の中の失敗（処理中の想定外の例外、ページの解析の失敗など）。`UNKNOWN_TOOL`: LLM が存在しないツール名で呼んだ |
-| Skill の振る舞い   | `INTERNAL_ERROR` は応答の `retryable` を見る。処理中の想定外の例外は両 MCP とも `retryable: true` と `next_actions` の `retry_later` を返すので、1 回だけ retry する。それでも失敗したとき、または `retryable` が付かない・`false` のときは同じ呼び出しを繰り返さず、代替手段で回答するか、ユーザーに「該当 MCP に不具合がある可能性」と伝える。`UNKNOWN_TOOL` は tools/list で呼べるツールを確かめ、正しいツール名で呼び直す（ユーザーには見せない） |
-| ユーザーに見せるか | `INTERNAL_ERROR` で retry しても失敗したとき。`UNKNOWN_TOOL` は見せない                               |
+| Skill の振る舞い   | `INTERNAL_ERROR` は再試行しない。houki-egov-mcp v0.17.0・houki-nta-mcp v0.23.0 以上では、処理中の想定外の例外もページの解析の失敗も `retryable: false` で、`next_actions`（`retry_later`）は付かない。同じ呼び出しを繰り返さず、代替手段で回答するか、ユーザーに「該当 MCP に不具合がある可能性」と伝え、呼んだツール名・引数・応答の `error` / `detail.cause`（再現手順）を添えて GitHub の Issue での報告を勧める。`UNKNOWN_TOOL`（`retryable: false`）も同じ呼び出しは繰り返さず、tools/list で呼べるツールを確かめ、正しいツール名で呼び直す（ユーザーには見せない） |
+| ユーザーに見せるか | `INTERNAL_ERROR` は代替手段で答えられなかったとき。`UNKNOWN_TOOL` は見せない                               |
 
 例外として、ローカル DB の日付を読めないときの `INTERNAL_ERROR` は MCP のバグではない。houki-nta-mcp（v0.22.0 以上）は DB の取得時点（`fetched_at`）を、houki-egov-mcp（v0.16.0 以上）は同期の記録の日付（`sync_state.last_sync_date`）を読めないとき、`INTERNAL_ERROR`・`retryable: false` を返し、取り込みのやり直しを案内する。案内は、houki-nta-mcp では `next_actions` の `cli_bulk_download`（`example.command` にその種別の投入コマンド）、houki-egov-mcp では `hint`（`houki-egov-mcp --bulk-download-everything`）にある。このときは不具合として報告せず、案内のコマンドをユーザーに伝える。`error` が `取得時点を読めません:` / `同期の記録の日付を読めません:` で始まるかで見分けられる。
 
