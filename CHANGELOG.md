@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.16.1] - 2026-10-02
+
+**patch リリース** — 0.16.0 のときに対象の外として残した、エラーの扱いの記述 4 件を、houki-egov-mcp 0.16.0・houki-nta-mcp 0.22.0 の仕様に合わせた。突き合わせる MCP の版と `mcp-snapshots/` は変えていない。
+
+### Fixed
+
+- **`docs/ERROR-CODES.md` の「正本に載っているが返さない code」**: houki-egov-mcp の行（#57 を指していた）を外した。houki-egov-mcp 0.16.0 は、どのツールも返さない code を型から外していて、正本の表の code はどれもいずれかのツールが返す。houki-nta-mcp の `SOURCE_TIMEOUT` / `SOURCE_RATE_LIMITED` の行は残した（nta の `common_errors` の「未決」9）
+- **`docs/ERROR-HANDLING.md` の `INTERNAL_ERROR` / `UNKNOWN_TOOL` の節**: 「同じ呼び出しを retry しない」を、応答の `retryable` を見る書き方に直した。処理中の想定外の例外は両 MCP とも `retryable: true` と `retry_later` を返す（SPEC-EGOV-COMMON-ERRORS-007・018、houki-nta-mcp の `common_errors` の「未決」6・7）ので 1 回だけ retry し、それでも失敗したとき、または `retryable` が付かない・`false` のときは繰り返さない。`UNKNOWN_TOOL` は tools/list でツール名を確かめて呼び直す、と分けて書いた。基本フローの図も合わせた
+- **`docs/ERROR-HANDLING.md` の `SOURCE_API_ERROR` の節**: 「4xx は引数見直し」を、応答の `retryable` を見る書き方に直した。houki-egov-mcp と houki-nta-mcp でこの code に入る失敗の範囲が違うことと、houki-nta-mcp 0.22.0 以上ではページが無い（404）ことは `DOC_NOT_FOUND` になることを書いた
+- **README の推奨最小バージョンの表**: houki-egov-mcp に v0.16.0（`FILE_TOO_LARGE`、検索の通信の失敗の `SOURCE_*`、`search_law` の `OUT_OF_SCOPE`）、houki-nta-mcp に v0.22.0（改正通達・事務運営指針と `nta_get_qa` / `nta_get_tax_answer` の `DOC_NOT_FOUND`）を足した
+
+`node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 206 か所、code 129 か所）。
+
 ## [0.16.0] - 2026-10-02
 
 **minor リリース** — houki-egov-mcp 0.16.0・houki-nta-mcp 0.22.0 への追随。両 MCP で `code` が変わった場面に合わせて、code の一覧と受け取ったときの扱いを直した。houki-hub `docs/DECISIONS.md`（2026-09-29）の T2 の「互換の扱い」に従い、MCP を publish した日に出す。

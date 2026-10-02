@@ -107,7 +107,8 @@ flowchart LR
 次の code は正本の表にありますが、表の版の MCP はどのツールからも返しません。一覧に残すか、取得の失敗を分けて返すかは各 MCP の Issue で決めます。
 
 - houki-nta-mcp の `SOURCE_TIMEOUT` と `SOURCE_RATE_LIMITED`（時間切れも `SOURCE_API_ERROR` になる。houki-nta-mcp の `common_errors` の spec.md の「未決」9）
-- houki-egov-mcp の、どのツールも返さない code（houki-egov-mcp #57）
+
+houki-egov-mcp は v0.16.0 で、どのツールも返さない code を型から外した（houki-egov-mcp #57）。v0.16.0 の正本の表にある code は、どれもいずれかのツールが返す。
 
 ## `retryable` の読み方
 
