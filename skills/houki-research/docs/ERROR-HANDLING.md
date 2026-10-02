@@ -44,6 +44,8 @@ flowchart TB
 | ユーザーに見せるか | 上記をすべて試して見つからなかった場合のみ報告                                                                                     |
 | メッセージ整形例   | 「『○○法 第3000条』は見つかりませんでした。同法は第○○条までです」                                                                  |
 
+houki-nta-mcp の `nta_get_qa` / `nta_get_tax_answer` は、国税庁サイトにそのページが無い（HTTP 404・410、404 ページへの転送）ときも `DOC_NOT_FOUND` を返す（`retryable: false`、`next_actions` は `nta_search_qa` / `nta_search_tax_answer`。houki-nta-mcp v0.22.0 以上。v0.21.x までは `SOURCE_API_ERROR`・`retryable: true` だった）。番号の誤りなので時間をおいて取り直さず、`next_actions` の検索ツールで正しい番号を探す。
+
 ### `OUT_OF_SCOPE`
 
 | 項目               | 内容                                                                                               |
@@ -52,6 +54,8 @@ flowchart TB
 | Skill の振る舞い   | `resolved.source_mcp_hint` が示す MCP に**自動でルーティング**して再試行する。ユーザーには見せない |
 | ユーザーに見せるか | 通常は見せない (透過的に正しい MCP に切り替える)                                                   |
 | 例外               | 推奨先 MCP が family にまだ実装されていない場合 (`houki-court-mcp` 等) は、その旨をユーザーに案内  |
+
+houki-egov-mcp の `search_law` も、houki-egov の管轄でない略称（`消基通` など）を渡すと、0 件の成功ではなく `OUT_OF_SCOPE`（`get_law` と同じ本文）を返す（houki-egov-mcp v0.16.0 以上）。
 
 ### `next_actions` が `cli_bulk_download` の `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND` (ローカル DB に無い)
 
@@ -110,6 +114,14 @@ houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `n
 | Skill の振る舞い   | PDF 抽出は諦め、**HTML 本文** (例: 通達の HTML 版) や **別の添付** (新旧対照表ではなく別紙) に切り替え |
 | ユーザーに見せるか | はい (citation で「PDF の機械抽出ができなかったため HTML 版で代替」と注記)                             |
 
+### `FILE_TOO_LARGE`
+
+| 項目               | 内容                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| 原因               | ファイルが大きさの上限（50 MB）を超えている（pdf-reader-mcp の PDF、houki-egov-mcp v0.16.0 以上の `get_attachment` / `get_law_file` の `save: true`） |
+| Skill の振る舞い   | 保存しない。houki-egov-mcp では、応答の `detail.url` の URL をそのまま使う（`hint` も同じ案内）。`retryable: false` なので同じ呼び出しを繰り返さない |
+| ユーザーに見せるか | ファイルを読めなかったときだけ、URL を添えて伝える                                                     |
+
 ### `INTERNAL_ERROR` / `UNKNOWN_TOOL`
 
 | 項目               | 内容                                                                                                   |
@@ -117,6 +129,8 @@ houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `n
 | 原因               | MCP のバグ or LLM の未知 tool 呼び出し                                                                 |
 | Skill の振る舞い   | 同じ呼び出しを retry しない。代替手段で回答するか、ユーザーに「該当 MCP に不具合がある可能性」と伝える |
 | ユーザーに見せるか | はい                                                                                                   |
+
+例外として、ローカル DB の日付を読めないときの `INTERNAL_ERROR` は MCP のバグではない。houki-nta-mcp（v0.22.0 以上）は DB の取得時点（`fetched_at`）を、houki-egov-mcp（v0.16.0 以上）は同期の記録の日付（`sync_state.last_sync_date`）を読めないとき、`INTERNAL_ERROR`・`retryable: false` を返し、取り込みのやり直しを案内する。案内は、houki-nta-mcp では `next_actions` の `cli_bulk_download`（`example.command` にその種別の投入コマンド）、houki-egov-mcp では `hint`（`houki-egov-mcp --bulk-download-everything`）にある。このときは不具合として報告せず、案内のコマンドをユーザーに伝える。`error` が `取得時点を読めません:` / `同期の記録の日付を読めません:` で始まるかで見分けられる。
 
 ## メッセージ整形 — 共通テンプレート
 

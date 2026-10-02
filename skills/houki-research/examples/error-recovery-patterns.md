@@ -104,7 +104,7 @@ LLM は目次から「**第 57 条の 2**」が登録番号関連と当たりを
 
 ---
 
-## シナリオ 2 — `TSUTATSU_NOT_FOUND` (houki-nta-mcp): docId の typo を検索で救う
+## シナリオ 2 — `DOC_NOT_FOUND` (houki-nta-mcp): docId の typo を検索で救う
 
 ### 問い
 
@@ -120,12 +120,12 @@ LLM は目次から「**第 57 条の 2**」が登録番号関連と当たりを
 { "tool": "nta_get_kaisei_tsutatsu", "args": { "docId": "0025004-999" } }
 ```
 
-`isError: true` で以下が返る (houki-nta-mcp v0.14.1。改正通達が DB に入っている場合):
+`isError: true` で以下が返る (houki-nta-mcp v0.22.0。改正通達が DB に入っている場合。v0.21.x までは `code` が `TSUTATSU_NOT_FOUND` で、ほかのフィールドは同じ):
 
 ```json
 {
   "error": "改正通達 docId=\"0025004-999\" は見つかりません",
-  "code": "TSUTATSU_NOT_FOUND",
+  "code": "DOC_NOT_FOUND",
   "hint": "DB の改正通達 118 件に、この docId はありません。available_doc_ids（新しい順に 30 件）から選ぶか、nta_search_kaisei_tsutatsu で検索して docId を確かめてください。DB を投入した後に国税庁が公開した文書は、`houki-nta-mcp --bulk-download-kaisei` をもう一度実行すると取り込めます",
   "available_doc_ids": [
     {

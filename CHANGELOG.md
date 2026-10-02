@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.16.0] - 2026-10-02
+
+**minor リリース** — houki-egov-mcp 0.16.0・houki-nta-mcp 0.22.0 への追随。両 MCP で `code` が変わった場面に合わせて、code の一覧と受け取ったときの扱いを直した。houki-hub `docs/DECISIONS.md`（2026-09-29）の T2 の「互換の扱い」に従い、MCP を publish した日に出す。
+
+### Changed
+
+- **`scripts/mcp-refs.config.json` の版**: houki-egov-mcp 0.15.3 → 0.16.0、houki-nta-mcp 0.21.2 → 0.22.0。`mcp-snapshots/` の差分は、houki-egov-mcp の code に `FILE_TOO_LARGE` が増えたこと（code 13 → 14）と、`version`・`errorCodesSource` の URL だけ。ツールはどちらも 14 のままで、ツール名・引数名も変わらない。houki-nta-mcp の code は 11 のまま
+- **`docs/ERROR-CODES.md`**
+  - `FILE_TOO_LARGE`: houki-egov-mcp の列に印を付け、説明を「ファイルが大きさの上限（50 MB）を超えている（pdf-reader-mcp は PDF、houki-egov-mcp は `get_attachment` / `get_law_file` の `save: true`）」にした
+  - `TSUTATSU_NOT_FOUND`: 説明から「改正通達・事務運営指針を含む」を外した。houki-nta-mcp 0.22.0 で `nta_get_kaisei_tsutatsu` / `nta_get_jimu_unei` は `DOC_NOT_FOUND` を返すようになり、この code は基本通達（`nta_get_tsutatsu` / `nta_search_tsutatsu`）の場面だけになった
+  - `DOC_NOT_FOUND`: houki-nta-mcp の説明に「国税庁サイトにそのページが無い（`nta_get_qa` / `nta_get_tax_answer` の 404）」を足した
+  - `LAW_NOT_FOUND` と `SOURCE_*`: 「検索が成功して 0 件」と「通信の失敗」を分けて書いた（両 MCP の `common_errors` の表の文に合わせた）
+- **`SKILL.md` の鉄則 5 の表**: 取得ツールで `available_doc_ids` が付く行を `DOC_NOT_FOUND` だけにした。`cli_bulk_download` の行は、`nta_search_tsutatsu` が `TSUTATSU_NOT_FOUND` を返すので残した
+- **`examples/error-recovery-patterns.md` のシナリオ 2**: `nta_get_kaisei_tsutatsu` の例の code を `DOC_NOT_FOUND` にし、版の注記を houki-nta-mcp v0.22.0 にした。ほかのフィールドは SPEC-NTA-GET-KAISEI-TSUTATSU-002 と同じで、変えていない
+- **`docs/ERROR-HANDLING.md`**
+  - `*_NOT_FOUND` の節: `nta_get_qa` / `nta_get_tax_answer` で国税庁サイトにページが無いときも `DOC_NOT_FOUND`（`retryable: false`、`next_actions` は検索ツール）であることを足した
+  - `OUT_OF_SCOPE` の節: houki-egov-mcp 0.16.0 の `search_law` も管轄外の略称で `OUT_OF_SCOPE` を返すことを足した
+  - `INTERNAL_ERROR` の節: DB の取得時点（houki-nta-mcp）・同期の記録の日付（houki-egov-mcp）を読めないときの `INTERNAL_ERROR`（`retryable: false`）は MCP のバグではなく、案内のコマンドをユーザーに伝える、と書いた
+
+### Added
+
+- **`docs/ERROR-HANDLING.md` の `FILE_TOO_LARGE` の節**: 保存せず、応答の URL をそのまま使う
+
+`node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 206 か所、code 121 か所）。
+
 ## [0.15.1] - 2026-09-29
 
 **patch リリース** — 文書は変えていない。突き合わせる MCP の版を houki-egov-mcp 0.15.3・houki-nta-mcp 0.21.2 に上げた。

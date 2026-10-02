@@ -256,7 +256,7 @@ houki-nta-mcp が v0.16.x 以前だと `index_status` は付かない。その�
 | --------------------------------------- | ------------------------------------------ |
 | `LAW_NOT_FOUND` / `*_NOT_FOUND`         | 略称解決 → 検索 → 目次の順でフォールバック |
 | `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND` で `next_actions` が `cli_bulk_download` | その種別の文書がローカル DB に無い。**「該当なし」と答えない**。フォールバックせず、`next_actions` の投入コマンドをユーザーに案内する (検索ツールは houki-nta-mcp v0.13.0 以上、取得ツールは v0.14.1 以上) |
-| 取得ツールの `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND` で `available_doc_ids` が付く | docId の誤り。投入は案内しない。`available_doc_ids` から選ぶか、`next_actions` の検索ツールで docId を探し直す (houki-nta-mcp v0.14.1 以上) |
+| 取得ツールの `DOC_NOT_FOUND` で `available_doc_ids` が付く | docId の誤り。投入は案内しない。`available_doc_ids` から選ぶか、`next_actions` の検索ツールで docId を探し直す (houki-nta-mcp v0.14.1 以上。v0.21.x までは `nta_get_kaisei_tsutatsu` / `nta_get_jimu_unei` の code が `TSUTATSU_NOT_FOUND`) |
 | `SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE` | 最大 2 回まで retry。失敗時は平易に説明    |
 | `SOURCE_RATE_LIMITED`                   | 当該セッションで同種呼び出しを停止         |
 | `INVALID_PDF` / `ENCRYPTED_PDF`         | HTML 版や別添付に切替、citation に注記     |

@@ -70,22 +70,22 @@ flowchart LR
 
 | code | 意味 | houki-egov-mcp | houki-nta-mcp | pdf-reader-mcp |
 | --- | --- | --- | --- | --- |
-| `LAW_NOT_FOUND` | 法令が見つからない | ○ | | |
+| `LAW_NOT_FOUND` | 法令名の検索が成功して 0 件だった（法令が見つからない）。検索が通信の失敗で終わったときは `SOURCE_*` | ○ | | |
 | `ARTICLE_NOT_FOUND` | 法令・通達はあるが、求めた条・項・号（通達では条項）が無い | ○ | ○ | |
 | `RANGE_NOT_FOUND` | 求めた編・章・節、または附則の番号が無い | ○ | | |
 | `ATTACHMENT_NOT_FOUND` | 求めた添付ファイルが無い | ○ | | |
 | `ABBREVIATION_NOT_FOUND` | 略称辞書に無い名前を指定した | | ○ | |
-| `TSUTATSU_NOT_FOUND` | 求めた通達（改正通達・事務運営指針を含む）が、ローカル DB に無く国税庁サイトから取る先も無い | | ○ | |
-| `DOC_NOT_FOUND` | 求めた文書がローカル DB に無い（houki-nta-mcp）／ PDF が見つからない（pdf-reader-mcp） | | ○ | ○ |
+| `TSUTATSU_NOT_FOUND` | 求めた通達が、ローカル DB に無く国税庁サイトから取る先も無い | | ○ | |
+| `DOC_NOT_FOUND` | 求めた文書がローカル DB に無い、または国税庁サイトにそのページが無い（`nta_get_qa` / `nta_get_tax_answer` の 404）（houki-nta-mcp）／ PDF が見つからない（pdf-reader-mcp） | | ○ | ○ |
 
 ### 取得元（e-Gov・国税庁・PDF の URL）からの取得の失敗
 
 | code | 意味 | houki-egov-mcp | houki-nta-mcp | pdf-reader-mcp |
 | --- | --- | --- | --- | --- |
-| `SOURCE_API_ERROR` | 取得元がエラーを返した | ○ | ○ | ○ |
+| `SOURCE_API_ERROR` | 取得元との通信が失敗した（HTTP エラー）。houki-nta-mcp は、接続できない・時間切れ・5xx・429 もこの code で返す。ページが無い（404）ことや検索が成功して 0 件のことは含まない（`*_NOT_FOUND`） | ○ | ○ | ○ |
 | `SOURCE_TIMEOUT` | 取得が時間切れになった | ○ | ○ | ○ |
 | `SOURCE_RATE_LIMITED` | 取得元が回数制限を返した（HTTP 429） | ○ | ○ | |
-| `SOURCE_UNAVAILABLE` | 取得元に接続できない | ○ | | ○ |
+| `SOURCE_UNAVAILABLE` | 取得元に接続できない（DNS の失敗・接続拒否・接続の切断） | ○ | | ○ |
 
 ### PDF の中身の問題
 
@@ -94,7 +94,7 @@ flowchart LR
 | `INVALID_PDF` | PDF が壊れていて読めない | | | ○ |
 | `ENCRYPTED_PDF` | PDF が暗号化されていてパスワードが要る | | | ○ |
 | `UNSUPPORTED_PDF_FEATURE` | pdf-reader-mcp が扱えない PDF の機能（XFA フォームなど）を使っている | | | ○ |
-| `FILE_TOO_LARGE` | PDF が大きさの上限（50 MB）を超えている | | | ○ |
+| `FILE_TOO_LARGE` | ファイルが大きさの上限（50 MB）を超えている（pdf-reader-mcp は PDF、houki-egov-mcp は `get_attachment` / `get_law_file` の `save: true`） | ○ | | ○ |
 
 ### サーバー内部の失敗
 
