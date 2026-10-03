@@ -58,7 +58,7 @@ describe('extractJsonCalls', () => {
 describe('extractInlineCalls', () => {
   it('本文の `ツール名 { … }` から引数名を取る（引用符あり・なし・値なし）', () => {
     const md = [
-      '`search_law { "keyword": "<語>", "domain": "tax" }` で探す',
+      '`search_law { "keyword": "<語>", "law_type": "Act" }` で探す',
       '`get_attachment { "law_name", "src": "<attachments[].src>", "save": true }`',
       '  rt["read_text { file_path, split_columns: 2 }"]',
     ].join('\n');
@@ -66,7 +66,7 @@ describe('extractInlineCalls', () => {
     assert.deepEqual(
       calls.map((c) => [c.tool, c.args, c.line]),
       [
-        ['search_law', ['keyword', 'domain'], 1],
+        ['search_law', ['keyword', 'law_type'], 1],
         ['get_attachment', ['law_name', 'src', 'save'], 2],
         ['read_text', ['file_path', 'split_columns'], 3],
       ],

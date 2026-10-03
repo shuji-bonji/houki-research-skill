@@ -117,7 +117,7 @@ sequenceDiagram
 | 法令名すら不確か | `search_law` → `get_law` | `{ "keyword": "適格請求書" }` で法令名を探す |
 | 「どの法令の何条に書いてあるか」自体が不明 | `search_fulltext` → `get_law` | `{ "keyword": "民法 不法行為" }` で条文本文を横断検索 |
 
-`search_fulltext` はローカル DB (`houki-egov-mcp --bulk-download-everything` で構築) を引く。DB が無いと応答の `source` が `"api-fallback"` になり、`search_law` の結果が `fallback` に入って返る。このときは **本文検索ができていない**ので、回答で「法令名の一致で探した」と明示し、`next_actions` の `bulk_download_everything` をユーザーに案内する。
+`search_fulltext` はローカル DB (`houki-egov-mcp --bulk-download-everything` で構築) を引く。DB が無いとき、また DB の版がこの houki-egov-mcp と合わない (houki-egov-mcp v0.19.0 以上。v0.18.x 以前に作った古い版、新しい版、版を読めない DB) ときは、応答の `source` が `"api-fallback"` になり、`search_law` の結果が `fallback` に入って返る。このときは **本文検索ができていない**ので、回答で「法令名の一致で探した」と明示し、`note` の案内をユーザーに伝える。DB が無い・版が古いときは `next_actions` の `bulk_download_everything` (DB の作り直し) を、版が新しいときは houki-egov-mcp の更新を、版を読めないときは DB ファイルを消してからの `--bulk-download-everything` を案内する (`note` の文がそれぞれ違う)。
 
 #### 通達や質疑応答事例を先に引いたら、法律本文へ戻る (houki-nta-mcp v0.11.0 以上。質疑応答事例は v0.12.0 以上)
 
@@ -163,7 +163,7 @@ sequenceDiagram
 
 タックスアンサー (`nta_get_tax_answer`) には構造化された根拠法令が無い。本文の「根拠法令等」の節を読み、そこに挙がっている法令を `get_law` で引く。
 
-8xxx 帯の docId は `nta_get_tax_answer` で取れない（`INVALID_ARGUMENT` で断られ、DB も引かない）。`nta_search_tax_answer` は 8xxx 帯の記事も返し、先頭が 8xxx でも `next_actions` は `nta_get_tax_answer` を案内する（houki-nta-mcp v0.23.0）ので、その案内には従わず、`results[].sourceUrl` を案内する。
+8xxx 帯 (災害関係) の docId も、houki-nta-mcp v0.24.0 以上では `nta_get_tax_answer` で取れる。`nta_search_tax_answer` の `next_actions` が 8xxx の `nta_get_tax_answer` を案内したら、そのまま従ってよい。v0.23.x 以前は 8xxx を `INVALID_ARGUMENT` で断るので、その案内には従わず、`results[].sourceUrl` を案内する。
 
 houki-nta-mcp が v0.10.x 以前だと `base_laws` は無く、v0.11.x 以前だと `related_laws` は無い。そのときは本文の参照から法令名を自分で補う。
 
@@ -259,7 +259,7 @@ houki-nta-mcp が v0.16.x 以前だと `index_status` は付かない。その�
 | `LAW_NOT_FOUND` / `*_NOT_FOUND`         | 略称解決 → 検索 → 目次の順でフォールバック |
 | `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND` で `next_actions` が `cli_bulk_download` | その種別の文書がローカル DB に無い。**「該当なし」と答えない**。フォールバックせず、`next_actions` の投入コマンドをユーザーに案内する (検索ツールは houki-nta-mcp v0.13.0 以上、取得ツールは v0.14.1 以上) |
 | 取得ツールの `DOC_NOT_FOUND` で `available_doc_ids` が付く | docId の誤り。投入は案内しない。`available_doc_ids` から選ぶか、`next_actions` の検索ツールで docId を探し直す (houki-nta-mcp v0.14.1 以上。v0.21.x までは `nta_get_kaisei_tsutatsu` / `nta_get_jimu_unei` の code が `TSUTATSU_NOT_FOUND`) |
-| `SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE` | 最大 2 回まで retry。失敗時は平易に説明    |
+| `SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE` | 1 回のエラーにつき retry は 1 回、同じセッションで合わせて 2 回まで。失敗時は平易に説明 |
 | `SOURCE_RATE_LIMITED`                   | 当該セッションで同種呼び出しを停止         |
 | `INVALID_PDF` / `ENCRYPTED_PDF`         | HTML 版や別添付に切替、citation に注記     |
 | `INVALID_ARGUMENT`                      | `detail.issues[].path` の引数を直して呼び直す。ユーザーに見せない |
@@ -337,6 +337,8 @@ MCP を組み込む開発者は問いを投げる利用者ではなく、契約�
 
 - **`houki-egov-mcp` / `houki-nta-mcp`** が Claude Desktop / Claude Code に登録済みであること。`pdf-reader-mcp` は添付 PDF を表として取るときに使うが、無くても手元の PDF 読み取りツールで代わりになる (鉄則 3 の「添付 PDF に当たったら」)
 - houki-nta-mcp の bulk DL (`--bulk-download-everything`) が初回完了済みであること
+- houki-egov-mcp の `search_fulltext` で条文本文を探すなら、houki-egov-mcp の bulk DL (`--bulk-download-everything`、全件の zip 約 290 MB) が済んでいること。houki-egov-mcp v0.19.0 で DB の版が 3 になり、v0.18.x 以前に作った DB は使えない。v0.19.0 以上の `--bulk-download-everything` で作り直す。作り直した DB を v0.18.x 以前の houki-egov-mcp で開くと全テーブルが消えるので、作り直した後は CLI と MCP サーバー (plugin) の版を v0.19.0 以上にそろえる
+- houki-nta-mcp v0.24.0 で DB の版が 12 になった。v0.23.x 以前で作った DB は、v0.24.0 の CLI かツールが最初に開いたときに行を保ったまま移行されるので、取り込み直しは要らない。移行した DB を v0.23.x 以前の houki-nta-mcp で開くと全テーブルが消えて作り直されるので、v0.23.x 以前に戻すときは `HOUKI_NTA_DB_PATH` で別の DB ファイルを指す
 
 設定方法は houki-nta-mcp の [`docs/HOUKI-FAMILY-INTEGRATION.md`](https://github.com/shuji-bonji/houki-nta-mcp/blob/main/docs/HOUKI-FAMILY-INTEGRATION.md) に詳細あり。
 

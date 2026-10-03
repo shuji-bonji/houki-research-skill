@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.18.0] - 2026-10-04
+
+**minor リリース** — houki-egov-mcp 0.18.0・0.19.0 / houki-nta-mcp 0.24.0 に追随。3 つの版とも 2026-10-04 に publish された。houki-hub `docs/DECISIONS.md`（2026-09-29）の T2 の「互換の扱い」に従い、MCP を publish した日に `docs/ERROR-CODES.md` を直す。
+
+### Changed
+
+- **`scripts/mcp-refs.config.json` の版**: houki-egov-mcp 0.17.0 → 0.19.0、houki-nta-mcp 0.23.0 → 0.24.0。`mcp-snapshots/` の差分は、egov の `get_law` に `suppl_index` が増え、`search_law` / `search_fulltext` から `domain` が消えたこと、nta の `nta_search_qa` から `domain` が消え、code に `SOURCE_UNAVAILABLE` が増えたこと（ツールは 14 / 14、code は 14 / 12）
+- **`docs/ERROR-CODES.md`**: 各 MCP の `specs/current/common_errors/spec.md` に合わせた
+  - `LAW_NOT_FOUND`: 題名の完全一致が無いとき（候補を `hint` と `next_actions` に入れる）と、law_id を決めた後の e-Gov の 404 を足した（SPEC-EGOV-COMMON-ERRORS-032・033）
+  - `INVALID_ARGUMENT`: 時点 `at` が 2017-04-01 より前のとき、外した `domain` を渡したとき、`law_type` の `ImperialOrdinance` を足した（SPEC-EGOV-COMMON-ERRORS-033、SPEC-EGOV-SEARCH-LAW-016・018、SPEC-EGOV-SEARCH-FULLTEXT-022・038、SPEC-NTA-SEARCH-QA-010）
+  - `OUT_OF_SCOPE`: 返すツールに `search_fulltext` を足した（SPEC-EGOV-SEARCH-FULLTEXT-037）
+  - `SOURCE_UNAVAILABLE` の houki-nta-mcp の列に印を付け、`SOURCE_API_ERROR` の「houki-nta-mcp は時間切れ・429・接続できないときもこの code」を外した。「正本に載っているが返さない code」から nta の `SOURCE_TIMEOUT` / `SOURCE_RATE_LIMITED` を外した（SPEC-NTA-COMMON-ERRORS-018・019、houki-nta-mcp #120）
+  - `DOC_NOT_FOUND`: `nta_get_tax_answer` で国税庁の索引に番号が無いときを足した。「`retryable` の読み方」の例を、両 MCP とも 429 以外の 4xx は `retryable: false` にした
+- **`docs/ERROR-HANDLING.md`**: 基本フローの図で `SOURCE_RATE_LIMITED` を retry しない枝に分けた。「retry の回数」の節を足し、「1 回のエラーにつき retry 1 回」と「同じセッションで合わせて 2 回まで」を分けて書いた（これまで節ごとに「1 回まで」「1〜数回」「最大 2 回まで」と揃っていなかった。houki-nta-mcp #120 の 2026-10-03 JST のコメント）。`SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE`・`SOURCE_RATE_LIMITED`・`SOURCE_API_ERROR` の節を nta 0.24.0 の分け方に合わせた。`INVALID_ARGUMENT`（`at` の範囲・`domain`・`ImperialOrder`）、`LAW_NOT_FOUND`（候補付き・404）、`OUT_OF_SCOPE`（`search_fulltext`）、nta 0.24.0 の DB の版が合わないときの読むだけのツールの `hint` を足した
+- **`examples/error-recovery-patterns.md` のシナリオ 4**: `SOURCE_TIMEOUT` の例を nta 0.24.0 の応答の形（`error`・`hint` の文、`tool`・`url`、`detail.cause` 無し）にし、v0.23.x までは `SOURCE_API_ERROR` で返ることと、サーバーの中で 4 回まで要求することを足した
+- **`workflows/feasibility-check.md` のステップ ③**: 「分野だけ」の行の `search_law { "keyword": "<語>", "domain": "tax" }` を `search_fulltext` に替えた（egov 0.18.0 で `domain` を外した。#55）。`scripts/test/tool-refs.test.mjs` の同じ例も `law_type` に替えた
+- **`search_fulltext` の `api-fallback` の説明**（`SKILL.md`・`workflows/tax-research.md`・`workflows/feasibility-check.md`・`examples/invoice-registration.md`・`docs/ARCHITECTURE.md`）: egov 0.19.0 では DB の版が合わないとき（0.18.x 以前に作った古い版、新しい版、読めない版）も `search_law` に切り替え、`note` で案内することを足した（SPEC-EGOV-SEARCH-FULLTEXT-039・040）
+- **`SKILL.md` と `workflows/tax-research.md` のタックスアンサーの手順**: 「8xxx 帯の docId は `nta_get_tax_answer` で取れない」を、v0.24.0 以上では取れる（houki-nta-mcp #128）、v0.23.x 以前は今までどおり `results[].sourceUrl` を案内する、に直した
+- **`SKILL.md` の鉄則 5 の表**: `SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE` の retry の回数を `docs/ERROR-HANDLING.md` の「retry の回数」に合わせた
+- **README の推奨最小バージョンの表**: houki-egov-mcp に v0.18.0・v0.19.0、houki-nta-mcp に v0.24.0 の変更を足した
+
+### Added
+
+- **`SKILL.md` の「利用前提」と README**: egov 0.19.0 の DB の作り直し（版 3。0.18.x 以前に作った DB は使えず、`--bulk-download-everything` で作り直す。作り直した DB を 0.18.x 以前で開くと全テーブルが消える）と、nta 0.24.0 の DB の移行（版 12。取り込み直しは要らない。移行した DB を 0.23.x 以前で開くと作り直される）を足した
+- **`workflows/feasibility-check.md` の `references[].kind` の表**: `suppl`（本文の「附則第N条」。`resolved: false`。SPEC-EGOV-GET-ARTICLE-REFERENCES-047）の行を足した。条を持たない `external` の `next_actions` が `get_toc` になること（052）と、`delegations[].target_law` が常にあり `null` になりうること（012・031・049）も足した
+- **`docs/CITATION.md` の `verify_citations`**: 附則の条を引用するときの `suppl_index`（SPEC-EGOV-VERIFY-CITATIONS-046・047）と、`at` が 2017-04-01 より前のときのツール全体の `INVALID_ARGUMENT`（048）を足した
+
+### 確かめたこと
+
+- 2026-10-04 JST に `skills/houki-research/` を grep した範囲で、`search_fulltext` の段落だけの附則のヒット（`附則(<n>) intro`。egov 0.19.0 で `附則(<n>)`、#101）、`explain_law_type` の `通達` の `aliases` の `通知`（#62）、`law_type` の `ImperialOrdinance`、`nta_search_qa` の `domain`、事務運営指針の `legal_status.note` を載せた箇所は無かった
+- `node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 239 か所、code 158 か所）。`node --test 'scripts/test/*.test.mjs'` は 19 件とも通った
+
 ## [0.17.1] - 2026-10-03
 
 **patch リリース** — `workflows/tax-research.md` の 1 文を、houki-nta-mcp の `resolve_abbreviation` の仕様に合わせた（#24）。突き合わせる MCP の版と `mcp-snapshots/` は変えていない。

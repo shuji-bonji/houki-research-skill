@@ -9,8 +9,9 @@ flowchart TB
   err[MCP からエラー応答] --> p1{code を確認}
   p1 -->|INVALID_ARGUMENT| f1[引数を見直して再呼び出し<br/>ユーザーに確認しない]
   p1 -->|*_NOT_FOUND| f2[next_actions に従い<br/>検索・略称解決を試行]
-  p1 -->|SOURCE_TIMEOUT<br/>SOURCE_RATE_LIMITED<br/>SOURCE_UNAVAILABLE| f3[retry: 1〜数回<br/>失敗時はユーザーに状況説明]
-  p1 -->|SOURCE_API_ERROR| f4[detail.status を見て<br/>retry/fallback 判断]
+  p1 -->|SOURCE_TIMEOUT<br/>SOURCE_UNAVAILABLE| f3[retry は 1 回まで<br/>セッションで合わせて 2 回まで<br/>失敗時はユーザーに状況説明]
+  p1 -->|SOURCE_RATE_LIMITED| f7[retry しない<br/>同種の呼び出しを止めて状況説明]
+  p1 -->|SOURCE_API_ERROR| f4[retryable を見て<br/>retry/fallback 判断]
   p1 -->|INVALID_PDF<br/>ENCRYPTED_PDF<br/>UNSUPPORTED_*| f5[PDF を諦めて<br/>HTML 本文や別ソースに切替]
   p1 -->|INTERNAL_ERROR| f6[retry しない<br/>再現手順を添えて報告 + 別経路]
 
@@ -18,7 +19,7 @@ flowchart TB
   classDef warn fill:#fff3cd,stroke:#ffc107,color:#333
   classDef err fill:#f8d7da,stroke:#dc3545,color:#333
   class f1,f2 ok
-  class f3,f4,f5 warn
+  class f3,f4,f5,f7 warn
   class f6 err
 ```
 
@@ -35,6 +36,10 @@ flowchart TB
 | ユーザーに見せるか | 通常は見せない (内部で解決)                                                |
 | 例外               | ユーザーの自然文が曖昧で引数を組めない場合は、ユーザーに何が必要か質問する |
 
+houki-egov-mcp v0.18.0 以上は、e-Gov が時点 `at` を受け付けない（2017-04-01 より前の時点）ときも `INVALID_ARGUMENT`（`detail.issues[0].path: "at"`、`hint` に e-Gov の文）を返す。引数の組み立ての誤りではなく、e-Gov が古い時点の法令本文を持っていないことによる。`at` を変えて呼び直しても求めた時点の本文は取れないので、e-Gov で取れるのは 2017-04-01 以降の時点だけであることをユーザーに伝える。v0.17.x は同じ場面で `SOURCE_API_ERROR`（`retryable: false`）だった。
+
+外した引数を渡したときも `INVALID_ARGUMENT` になる。houki-egov-mcp v0.18.0 以上の `search_law` / `search_fulltext` の `domain`、houki-nta-mcp v0.24.0 以上の `nta_search_qa` の `domain` がこれに当たる。`domain` を外して呼び直す（`nta_search_qa` の税目は `topic` で絞る）。`search_law` / `search_fulltext` の `law_type` で勅令を絞るときは `ImperialOrder` を渡す（`ImperialOrdinance` は houki-egov-mcp v0.18.0 以上で `INVALID_ARGUMENT`）。
+
 ### `LAW_NOT_FOUND` / `ARTICLE_NOT_FOUND` / `TSUTATSU_NOT_FOUND` / `DOC_NOT_FOUND`
 
 | 項目               | 内容                                                                                                                               |
@@ -43,6 +48,10 @@ flowchart TB
 | Skill の振る舞い   | ① 略称解決 (`resolve_abbreviation`) → ② 検索系 tool (`search_law` / `nta_search_tsutatsu`) → ③ 目次系 (`get_toc`) の順でフォールバック |
 | ユーザーに見せるか | 上記をすべて試して見つからなかった場合のみ報告                                                                                     |
 | メッセージ整形例   | 「『○○法 第3000条』は見つかりませんでした。同法は第○○条までです」                                                                  |
+
+houki-egov-mcp v0.18.0 以上は、略称辞書に無い法令名で e-Gov の題名の完全一致が無いとき、検索結果の先頭の法令を使わずに `LAW_NOT_FOUND` を返す。部分一致した法令があれば、`hint` に候補の題名と法令番号を、`next_actions` に候補ごとの呼び直しの例（`law_name` だけを候補の題名に替えたもの）を入れる。問いから指す法令が 1 つに決まるならその `example` で呼び直し、決まらないなら候補をユーザーに示して選んでもらう。v0.17.x は同じ場面で先頭の法令（たとえば「所得税法施行」に対して所得税法施行令）を成功として返していたので、v0.18.0 以上で `LAW_NOT_FOUND` になった呼び出しは、法令名を正しい題名に直す。
+
+law_id を決めた後に e-Gov が「その法令が無い」と答えたとき（404）も、houki-egov-mcp v0.18.0 以上は `LAW_NOT_FOUND` を返す（`detail.cause` に e-Gov の code。v0.17.x は `SOURCE_API_ERROR`）。`at` を渡していれば、その時点にまだ法令が無かった可能性が高いので、`next_actions` の `get_law_revisions` で施行日を確かめるか、`at` を外して呼び直す。
 
 houki-nta-mcp の `nta_get_qa` / `nta_get_tax_answer` は、国税庁サイトにそのページが無い（HTTP 404・410、404 ページへの転送）ときも `DOC_NOT_FOUND` を返す（`retryable: false`、`next_actions` は `nta_search_qa` / `nta_search_tax_answer`。houki-nta-mcp v0.22.0 以上。v0.21.x までは `SOURCE_API_ERROR`・`retryable: true` だった）。番号の誤りなので時間をおいて取り直さず、`next_actions` の検索ツールで正しい番号を探す。
 
@@ -55,7 +64,7 @@ houki-nta-mcp の `nta_get_qa` / `nta_get_tax_answer` は、国税庁サイト�
 | ユーザーに見せるか | 通常は見せない (透過的に正しい MCP に切り替える)                                                   |
 | 例外               | 推奨先 MCP が family にまだ実装されていない場合 (`houki-court-mcp` 等) は、その旨をユーザーに案内  |
 
-houki-egov-mcp の `search_law` も、houki-egov の管轄でない略称（`消基通` など）を渡すと、0 件の成功ではなく `OUT_OF_SCOPE`（`get_law` と同じ本文）を返す（houki-egov-mcp v0.16.0 以上）。
+houki-egov-mcp の `search_law` も、houki-egov の管轄でない略称（`消基通` など）を渡すと、0 件の成功ではなく `OUT_OF_SCOPE`（`get_law` と同じ本文）を返す（houki-egov-mcp v0.16.0 以上）。`search_fulltext` も、`keyword` 全体が管轄外の略称のときは、ローカル DB の有無によらず `OUT_OF_SCOPE` を返す（houki-egov-mcp v0.18.0 以上。`消基通 仕入税額控除` のように別の語と組み合わせたときは本文を探す）。
 
 ### `next_actions` が `cli_bulk_download` の `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND` (ローカル DB に無い)
 
@@ -69,6 +78,16 @@ houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `n
 | Skill の振る舞い   | 略称解決・検索でのフォールバックはしない (何度検索しても同じ)。**「該当なし」「国税庁の資料に無い」と答えない**。`next_actions[].example.command` の投入コマンドと、`hint` の DB のパスをユーザーに伝える |
 | ユーザーに見せるか | 見せる (ユーザーの環境で投入が必要なため)                                                             |
 | メッセージ整形例   | 「質疑応答事例がローカル DB に入っていないため、検索できませんでした。`houki-nta-mcp --bulk-download-qa` で投入してください (DB: …/cache.db)」 |
+
+houki-nta-mcp v0.24.0 以上では、ローカル DB の版がこの houki-nta-mcp で使えないときも、読むだけのツール（検索ツールと、改正通達・事務運営指針・文書回答事例の取得、`nta_inspect_pdf_meta`）は同じ code を返し、`hint` だけを DB の状態の文にする。`hint` が「MCP サーバーが開いている DB（…）の版」で始まるときは、投入していないのではなく DB の版が合っていない。
+
+| `hint` の内容 | `next_actions` | ユーザーに伝えること |
+| --- | --- | --- |
+| 版が古く移行できない（版 1・2） | 投入の案内（`cli_bulk_download`） | 投入のフラグ（`houki-nta-mcp --quickstart` など）を実行すると作り直されること。取り込んだ中身は消える |
+| 版がこの houki-nta-mcp より新しい | 投入の案内は無い | houki-nta-mcp を新しい版に更新すること。投入のフラグを実行しても終了コード 1 で止まる |
+| 版を読めない | 投入の案内は無い | DB ファイルを消してから投入のフラグを実行すること |
+
+版が新しい DB は、多くの場合、新しい版の houki-nta-mcp で作った DB を古い版の MCP サーバーが開いている（MCP クライアントやプラグインの版が古い）ときに起きる。
 
 キーワードに合わないだけの 0 件は、エラーではなく `results: []` と、検索した件数を書いた `hint` で返る。こちらは「その語を含む文書は無い」という検索結果として扱ってよい。
 
@@ -84,10 +103,23 @@ houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `n
 
 | 項目               | 内容                                                                                  |
 | ------------------ | ------------------------------------------------------------------------------------- |
-| 原因               | 外部 API (e-Gov / NTA) の一時不調                                                     |
-| Skill の振る舞い   | **1 回まで**自動 retry (5 秒〜数十秒の間隔)。それでも失敗なら fallback または報告     |
-| ユーザーに見せるか | 自動 retry も失敗した場合のみ。「e-Gov 側の応答が一時的に得られませんでした」と簡潔に |
-| 注意               | retry を**ループにしない**。LLM 同一セッション内では最大 2 回まで                     |
+| 原因               | 取得元 (e-Gov / 国税庁サイト) の一時的な不調、または手元のネットワーク・DNS の問題 (`SOURCE_UNAVAILABLE` の `detail.cause`) |
+| Skill の振る舞い   | 1 回のエラーにつき、間隔をあけて (30 秒〜数分) **1 回だけ** retry する。それでも失敗なら fallback または報告 (下の「retry の回数」) |
+| ユーザーに見せるか | retry も失敗した場合のみ。「e-Gov 側の応答が一時的に得られませんでした」と簡潔に |
+| 注意               | retry を**ループにしない**。同じセッションの retry は合わせて 2 回まで |
+
+houki-nta-mcp は v0.24.0 以上でこの 2 つの code を返す (`nta_get_tsutatsu` / `nta_get_qa` / `nta_get_tax_answer`)。v0.23.x までは、時間切れも接続できないときも `SOURCE_API_ERROR` (`retryable: true`) で、`error` の文と `detail.status` が無いことでしか見分けられなかった。
+
+### retry の回数
+
+「1 回のエラーで何回 retry するか」と「1 セッションで合わせて何回 retry するか」を分けて数える。`SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE` / `retryable: true` の `SOURCE_API_ERROR` に共通する。
+
+| 数える単位 | 上限 | 上限に達したら |
+| --- | --- | --- |
+| 1 回のエラー (同じツールを同じ引数で呼んだ 1 回) | retry 1 回 | その資料を取らずに部分回答し、citation に「取得できなかった」と注記する |
+| 1 セッション (同じ MCP への retry の合計) | 2 回 | 以後はその MCP で retry せず、取得元が不調であることをユーザーに伝える |
+
+houki-egov-mcp と houki-nta-mcp は、サーバーの中で取り直した後でこれらのエラーを返す (取り直す場面と回数は各 MCP の `common_errors` の spec.md)。Skill の retry はそれに重ねて行うので、間隔をあけずに続けて呼ばない。
 
 ### `SOURCE_RATE_LIMITED`
 
@@ -98,14 +130,16 @@ houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `n
 | ユーザーに見せるか | はい                                                                                                                                               |
 | 注意               | retry しない。MCP 側の concurrency limit と独立してレート制限が出た場合は、ユーザー側のセッション全体で抑える                                      |
 
+houki-egov-mcp は 429 をサーバーの中で取り直してからこの code を返し、houki-nta-mcp (v0.24.0 以上) は国税庁サイトへの要求を増やさないよう取り直さずに返す。どちらも `retryable: true` だが、Skill はこのセッションでは retry しない。houki-nta-mcp v0.23.x までは 429 も `SOURCE_API_ERROR` だった。
+
 ### `SOURCE_API_ERROR`
 
 | 項目               | 内容                                                                        |
 | ------------------ | --------------------------------------------------------------------------- |
-| 原因               | 取得元との通信の失敗。houki-egov-mcp は HTTP エラー（5xx・429 以外の 4xx）だけで、時間切れ・429・接続できないときは別の `SOURCE_*` を返す。houki-nta-mcp は接続できない・時間切れ・5xx・429 をすべてこの code で返す |
-| Skill の振る舞い   | 応答の `retryable` を見る。`true`（5xx など）なら 1 回だけ retry する。`false`（houki-egov-mcp の 429 以外の 4xx）なら同じ呼び出しを繰り返さず、引数を見直すか報告する。`detail.status` は判断の補いに使う |
+| 原因               | 取得元との通信の失敗。HTTP の 5xx と 429 以外の 4xx（403・400 など）と、`SOURCE_UNAVAILABLE` に当たらないネットワークの失敗。時間切れ・429・接続できないときは別の `SOURCE_*` を返す（houki-nta-mcp は v0.24.0 以上。v0.23.x までは、それらもすべてこの code だった） |
+| Skill の振る舞い   | 応答の `retryable` を見る。`true`（5xx など）なら、上の「retry の回数」のとおり 1 回だけ retry する。`false`（429 以外の 4xx。houki-nta-mcp では v0.24.0 以上で、`nta_get_tsutatsu` の目次のページの 404 も含む）なら同じ呼び出しを繰り返さず、引数を見直すか報告する。`detail.status` は判断の補いに使う |
 | ユーザーに見せるか | retry しても失敗したとき、または `retryable: false` で引数を直せないとき                |
-| 注意               | 文書のページが無い（HTTP 404）ことは、houki-nta-mcp v0.22.0 以上では `SOURCE_API_ERROR` ではなく `DOC_NOT_FOUND` で返る（上の `*_NOT_FOUND` の節） |
+| 注意               | 文書のページが無い（HTTP 404）ことは、houki-nta-mcp v0.22.0 以上では `SOURCE_API_ERROR` ではなく `DOC_NOT_FOUND` で返る（上の `*_NOT_FOUND` の節）。houki-egov-mcp v0.18.0 以上も、law_id を決めた後の e-Gov の 404 は `LAW_NOT_FOUND`、時点 `at` の 400 は `INVALID_ARGUMENT` で返す |
 
 ### `INVALID_PDF` / `ENCRYPTED_PDF` / `UNSUPPORTED_PDF_FEATURE`
 
@@ -193,7 +227,7 @@ flowchart LR
 
 | アンチパターン                             | なぜダメか                                       | 代わりに                                                   |
 | ------------------------------------------ | ------------------------------------------------ | ---------------------------------------------------------- |
-| `SOURCE_TIMEOUT` を無限 retry する         | API 側に追い打ちをかけ、レート制限まで誘発する   | 最大 2 回まで。それ以上はユーザーに報告                    |
+| `SOURCE_TIMEOUT` を無限 retry する         | API 側に追い打ちをかけ、レート制限まで誘発する   | 1 回のエラーにつき 1 回、セッションで合わせて 2 回まで。それ以上はユーザーに報告 |
 | `code` をユーザーにそのまま見せる          | 技術的な記号は不親切                             | 「e-Gov の応答が一時的に得られません」など平易な表現に翻訳 |
 | `INVALID_ARGUMENT` をユーザーに伝える      | LLM 自身のミスをユーザーの問題にすり替えてしまう | 内部で引数を直して再呼び出し                               |
 | `ENCRYPTED_PDF` で諦めて回答全体を打ち切る | HTML 等の代替経路があるのに使わない              | フォールバックを試し、citation で代替経路を注記            |

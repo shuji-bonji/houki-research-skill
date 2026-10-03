@@ -35,7 +35,8 @@
 //              chapter_path: "第五章　雑則", score_reasons: ["fts rank -2.60 → base 0.206", "article_caption_match"] }
 //   hits[1]: { law_title: "消費税法", article_num: "附則(137) 44", caption: "（適格請求書発行事業者の登録等に関する経過措置）",
 //              score_reasons: [..., "article_caption_match", "supplementary_provision"] }
-//   実測: houki-egov-mcp v0.15.1（2026-09-21）。ローカル DB が無いと source が "api-fallback" になり、search_law の結果が fallback に入る
+//   実測: houki-egov-mcp v0.15.1（2026-09-21）。ローカル DB が無いと source が "api-fallback" になり、search_law の結果が fallback に入る。
+//   houki-egov-mcp v0.19.0 以上では、v0.18.x 以前に作った DB（版 2）も使わずに api-fallback になる（note で --bulk-download-everything での作り直しを案内する）
 
 { "tool": "get_law", "args": { "law_name": "消費税法", "article": "57の2" } }
 // → 条文本文（第 1 項〜第 12 項）+ meta: { law_id: "363AC0000000108", title: "消費税法", law_num: "昭和六十三年法律第百八号", retrieved_at, url }

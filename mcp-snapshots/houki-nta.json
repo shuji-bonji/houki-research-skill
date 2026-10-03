@@ -2,7 +2,7 @@
   "$comment": "自動生成（scripts/update-mcp-snapshots.mjs）。手で編集しないでください",
   "server": "houki-nta",
   "npm": "@shuji-bonji/houki-nta-mcp",
-  "version": "0.23.0",
+  "version": "0.24.0",
   "tools": [
     {
       "name": "nta_get_bunshokaitou",
@@ -131,7 +131,6 @@
     {
       "name": "nta_search_qa",
       "properties": [
-        "domain",
         "hasPdf",
         "keyword",
         "limit",
@@ -176,7 +175,7 @@
       "acceptsUnknownArgs": false
     }
   ],
-  "errorCodesSource": "https://github.com/shuji-bonji/houki-nta-mcp/blob/v0.23.0/specs/current/common_errors/spec.md",
+  "errorCodesSource": "https://github.com/shuji-bonji/houki-nta-mcp/blob/v0.24.0/specs/current/common_errors/spec.md",
   "errorCodes": [
     "ABBREVIATION_NOT_FOUND",
     "ARTICLE_NOT_FOUND",
@@ -187,6 +186,7 @@
     "SOURCE_API_ERROR",
     "SOURCE_RATE_LIMITED",
     "SOURCE_TIMEOUT",
+    "SOURCE_UNAVAILABLE",
     "TSUTATSU_NOT_FOUND",
     "UNKNOWN_TOOL"
   ]

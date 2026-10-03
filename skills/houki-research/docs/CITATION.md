@@ -85,6 +85,8 @@
 | `ambiguous` | (なし) | 法令名が e-Gov の法令名と完全一致していない。`candidates[]` から指したい法令を選び、その `law_id` で呼び直す。**どれか 1 つを推測して citation に書かない** |
 | `ambiguous` | `INVALID_ARGUMENT` | 項が複数ある条で項を書かずに号だけを引いている。本文を読んでどの項の号かを決め、`paragraph` を足して呼び直す |
 
+附則の条を引用するときは、その件に `suppl_index` (`get_toc` の `suppl_provisions[].index` と同じ附則の番号) を書く (houki-egov-mcp v0.18.0 以上)。`suppl_index` の無い件は本則の中だけで確かめるので、本則に無く附則にだけある条番号は `ARTICLE_NOT_FOUND` になり、`reason` に同じ番号の条を持つ附則が、`next_actions` に `suppl_index` 付きの `get_law` が入る。引用が附則の条を指しているなら、その附則の `suppl_index` を足して呼び直す。v0.17.x は同じ件を附則の条で `found` にしていた。
+
 `summary.all_found` が true のときだけ「引用はすべて実在を確認した」と書いてよい。false のまま残した引用があるなら、その行に「実在を確認できていない」と注を付ける。
 
 ### 確かめていないこと
@@ -92,6 +94,8 @@
 `verify_citations` が確かめるのは **条文が実在するか** だけで、その条文が回答の主張を支えるかどうかは判定していない。「`verify_citations` で確認済み」は「引用が正しい」の意味では使わない。
 
 e-Gov に問い合わせられなかったときは、件ごとの判定ではなくツール全体が `SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE` / `SOURCE_API_ERROR` になる。このときは引用を消さず、citation に「実在確認は e-Gov に接続できず未実施」と注記する ([`ERROR-HANDLING.md`](ERROR-HANDLING.md))。
+
+`at` に 2017-04-01 より前の時点を渡したときも、ツール全体が `INVALID_ARGUMENT` (`detail.issues[0].path: "at"`) になる (houki-egov-mcp v0.18.0 以上。v0.17.x は件ごとの `LAW_NOT_FOUND` で、法令が e-Gov に無いと読める応答だった)。e-Gov はその時点の法令本文を持っていないので、引用を消さず、citation に「その時点の条文は e-Gov で確認できない」と注記する。
 
 通達・タックスアンサー・質疑応答事例・判例は `verify_citations` の対象外で、houki-nta-mcp の取得ツールが返した `docId` と `sourceUrl` をそのまま citation に書く。
 

@@ -268,7 +268,9 @@ houki-nta-mcp 固有の `available_doc_ids` (新しい順に 30 件、`docId` / 
 
 ### Skill の動作
 
-[`docs/ERROR-HANDLING.md`](../docs/ERROR-HANDLING.md) §「`SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE`」: **最大 1 回 retry**。それでも失敗なら fallback または平易な状況説明。同一セッション内で 2 回までという上限を守る。
+[`docs/ERROR-HANDLING.md`](../docs/ERROR-HANDLING.md) §「`SOURCE_TIMEOUT` / `SOURCE_UNAVAILABLE`」と §「retry の回数」: このエラーにつき **retry は 1 回**。それでも失敗なら fallback または平易な状況説明。同じセッションの retry は合わせて 2 回までという上限も守る。
+
+houki-nta-mcp が時間切れを `SOURCE_TIMEOUT` で返すのは v0.24.0 以上 (houki-nta-mcp #120)。v0.23.x までは同じ場面で `SOURCE_API_ERROR` (`retryable: true`、`detail.status` 無し) が返るので、`error` の文で時間切れと見分ける。扱いは同じ。
 
 ### MCP 呼び出しの引数
 
@@ -285,9 +287,9 @@ houki-nta-mcp 固有の `available_doc_ids` (新しい順に 30 件、`docId` / 
 
 ```json
 {
-  "error": "国税庁サイトからの取得に失敗: AbortError",
+  "error": "国税庁サイトからの取得に失敗: timeout after 30000ms",
   "code": "SOURCE_TIMEOUT",
-  "hint": "ネットワークが遅いか、サーバーが応答しません。",
+  "hint": "国税庁サイトが 30 秒以内に応答しませんでした。時間をおいて呼び直してください",
   "next_actions": [
     {
       "action": "retry_later",
@@ -295,9 +297,13 @@ houki-nta-mcp 固有の `available_doc_ids` (新しい順に 30 件、`docId` / 
     }
   ],
   "retryable": true,
-  "detail": { "url": "https://www.nta.go.jp/.../shohi/01/01.htm", "cause": "AbortError" }
+  "detail": { "url": "https://www.nta.go.jp/.../shohi/01/01.htm" },
+  "tool": "nta_get_tsutatsu",
+  "url": "https://www.nta.go.jp/.../shohi/01/01.htm"
 }
 ```
+
+houki-nta-mcp v0.24.0 の応答の形 (SPEC-NTA-COMMON-ERRORS-018 と、実装の `src/tools/source-errors.ts` から組み立てた例。時間切れを起こして実測したものではない)。houki-nta-mcp はサーバーの中で 1 秒・2 秒・4 秒あけて合わせて 4 回まで要求し、4 回とも 30 秒以内に応答が無かったときにこのエラーを返す。
 
 `retryable: true` を確認。30 秒待って 1 回だけ retry:
 

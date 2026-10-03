@@ -61,31 +61,31 @@ flowchart LR
 
 | code | 意味 | houki-egov-mcp | houki-nta-mcp | pdf-reader-mcp |
 | --- | --- | --- | --- | --- |
-| `INVALID_ARGUMENT` | 引数が tools/list の inputSchema に合わない、または値の形がツールの受け付ける形でない。`detail.issues[]` に `{ path, message }` が入る | ○ | ○ | ○ |
+| `INVALID_ARGUMENT` | 引数が tools/list の inputSchema に合わない、または値の形がツールの受け付ける形でない。`detail.issues[]` に `{ path, message }` が入る。houki-egov-mcp v0.18.0 以上では、e-Gov が時点 `at` を受け付けないとき（2017-04-01 より前。`path: "at"`、`hint` に e-Gov の文）、外した引数 `domain` を `search_law` / `search_fulltext` に渡したとき、`law_type` に `ImperialOrdinance` を渡したとき（勅令は `ImperialOrder`）もこの code。houki-nta-mcp v0.24.0 以上では `nta_search_qa` に `domain` を渡したときも同じ | ○ | ○ | ○ |
 | `INVALID_ARTICLE_NUM` | 条番号・号番号の書き方が受け付ける形でない | ○ | | |
 | `UNKNOWN_TOOL` | 存在しないツール名を呼んだ | ○ | ○ | |
-| `OUT_OF_SCOPE` | このサーバーの管轄でない資料を求めた（別の MCP で取る） | ○ | ○ | |
+| `OUT_OF_SCOPE` | このサーバーの管轄でない資料を求めた（別の MCP で取る）。houki-egov-mcp では、法令名を受け取るツール、`search_law`（v0.16.0 以上）、`search_fulltext`（v0.18.0 以上。`keyword` 全体が管轄外の略称のとき）が返す | ○ | ○ | |
 
 ### 求めたものが無い
 
 | code | 意味 | houki-egov-mcp | houki-nta-mcp | pdf-reader-mcp |
 | --- | --- | --- | --- | --- |
-| `LAW_NOT_FOUND` | 法令名の検索が成功して 0 件だった（法令が見つからない）。検索が通信の失敗で終わったときは `SOURCE_*` | ○ | | |
+| `LAW_NOT_FOUND` | 法令が見つからない。法令名の検索が成功して題名の完全一致が無かったとき（0 件、または部分一致だけ。部分一致があれば候補を `hint` と `next_actions` に入れる）と、law_id を決めた後に e-Gov が「その法令が無い」と答えたとき（404。`detail.cause` に e-Gov の code）に返す。どちらも houki-egov-mcp v0.18.0 以上で、v0.17.x は検索結果の先頭の法令を返し、404 は `SOURCE_API_ERROR` だった。検索が通信の失敗で終わったときは `SOURCE_*` | ○ | | |
 | `ARTICLE_NOT_FOUND` | 法令・通達はあるが、求めた条・項・号（通達では条項）が無い | ○ | ○ | |
 | `RANGE_NOT_FOUND` | 求めた編・章・節、または附則の番号が無い | ○ | | |
 | `ATTACHMENT_NOT_FOUND` | 求めた添付ファイルが無い | ○ | | |
 | `ABBREVIATION_NOT_FOUND` | 略称辞書に無い名前を指定した | | ○ | |
 | `TSUTATSU_NOT_FOUND` | 求めた通達が、ローカル DB に無く国税庁サイトから取る先も無い | | ○ | |
-| `DOC_NOT_FOUND` | 求めた文書がローカル DB に無い、または国税庁サイトにそのページが無い（`nta_get_qa` / `nta_get_tax_answer` の 404）（houki-nta-mcp）／ PDF が見つからない（pdf-reader-mcp） | | ○ | ○ |
+| `DOC_NOT_FOUND` | 求めた文書がローカル DB に無い、または国税庁サイトにそのページが無い（`nta_get_qa` / `nta_get_tax_answer` の 404）か、`nta_get_tax_answer` で国税庁の索引にその番号が無い（houki-nta-mcp）／ PDF が見つからない（pdf-reader-mcp） | | ○ | ○ |
 
 ### 取得元（e-Gov・国税庁・PDF の URL）からの取得の失敗
 
 | code | 意味 | houki-egov-mcp | houki-nta-mcp | pdf-reader-mcp |
 | --- | --- | --- | --- | --- |
-| `SOURCE_API_ERROR` | 取得元との通信が失敗した（HTTP エラー）。houki-nta-mcp は、接続できない・時間切れ・5xx・429 もこの code で返す。ページが無い（404）ことや検索が成功して 0 件のことは含まない（`*_NOT_FOUND`） | ○ | ○ | ○ |
+| `SOURCE_API_ERROR` | 取得元との通信が失敗した（HTTP の 5xx と、429 以外の 4xx）。時間切れ・429・接続できないときは下の 3 つの code で返す（houki-nta-mcp は v0.24.0 以上。v0.23.x まではどれもこの code だった）。ページが無い（404）ことや検索が成功して 0 件のことは含まない（`*_NOT_FOUND`） | ○ | ○ | ○ |
 | `SOURCE_TIMEOUT` | 取得が時間切れになった | ○ | ○ | ○ |
 | `SOURCE_RATE_LIMITED` | 取得元が回数制限を返した（HTTP 429） | ○ | ○ | |
-| `SOURCE_UNAVAILABLE` | 取得元に接続できない（DNS の失敗・接続拒否・接続の切断） | ○ | | ○ |
+| `SOURCE_UNAVAILABLE` | 取得元に接続できない（DNS の失敗・接続拒否・接続の切断） | ○ | ○ | ○ |
 
 ### PDF の中身の問題
 
@@ -104,15 +104,14 @@ flowchart LR
 
 ### 正本に載っているが返さない code
 
-次の code は正本の表にありますが、表の版の MCP はどのツールからも返しません。一覧に残すか、取得の失敗を分けて返すかは各 MCP の Issue で決めます。
+表の版（houki-egov-mcp v0.19.0・houki-nta-mcp v0.24.0）では、該当する code はありません。正本の表にある code は、どれもいずれかのツールが返します。
 
-- houki-nta-mcp の `SOURCE_TIMEOUT` と `SOURCE_RATE_LIMITED`（時間切れも `SOURCE_API_ERROR` になる。houki-nta-mcp の `common_errors` の spec.md の「未決」9）
-
-houki-egov-mcp は v0.16.0 で、どのツールも返さない code を型から外した（houki-egov-mcp #57）。v0.16.0 の正本の表にある code は、どれもいずれかのツールが返す。
+- houki-egov-mcp は v0.16.0 で、どのツールも返さない code を型から外しました（houki-egov-mcp #57）
+- houki-nta-mcp は v0.24.0 で、国税庁サイトとの通信の失敗を houki-egov-mcp と同じ 4 つの code に分け、`SOURCE_TIMEOUT` と `SOURCE_RATE_LIMITED` も返すようになりました（houki-nta-mcp #120）。v0.23.x までは、この 2 つは正本の表にあってもどのツールも返さず、時間切れも 429 も `SOURCE_API_ERROR` でした
 
 ## `retryable` の読み方
 
-再試行してよいかは、code から決めずに応答の `retryable` を見ます。同じ code でも、MCP と場面によって `retryable` が違います（例: `SOURCE_API_ERROR` は、5xx では `retryable: true` だが、houki-egov-mcp が 429 以外の 4xx を受けたときは `retryable: false`）。`INTERNAL_ERROR` と `UNKNOWN_TOOL` は、houki-egov-mcp v0.17.0・houki-nta-mcp v0.23.0 以上では、どの場面でも `retryable: false` です（処理中の想定外の例外も、ページの解析の失敗も）。`retryable` が付かない応答の扱いと、再試行の回数は [`ERROR-HANDLING.md`](ERROR-HANDLING.md) に書きます。
+再試行してよいかは、code から決めずに応答の `retryable` を見ます。同じ code でも、MCP と場面によって `retryable` が違います（例: `SOURCE_API_ERROR` は、5xx では `retryable: true` だが、429 以外の 4xx（403・400 など）を受けたときは `retryable: false`。houki-nta-mcp は v0.24.0 以上で、v0.23.x までは 4xx でも `retryable: true` だった）。`INTERNAL_ERROR` と `UNKNOWN_TOOL` は、houki-egov-mcp v0.17.0・houki-nta-mcp v0.23.0 以上では、どの場面でも `retryable: false` です（処理中の想定外の例外も、ページの解析の失敗も）。`retryable` が付かない応答の扱いと、再試行の回数は [`ERROR-HANDLING.md`](ERROR-HANDLING.md) に書きます。
 
 ## code の名前の付け方
 

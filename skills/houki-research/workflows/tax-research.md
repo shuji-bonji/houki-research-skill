@@ -126,7 +126,7 @@ houki-nta-mcp v0.23.0 以上では、houki-egov の管轄のエントリ（`in_s
 
 `get_law` の応答は条文本文と `meta`（`law_id` / `title` / `law_num` / `retrieved_at` / `url`。houki-egov-mcp v0.17.0 以上では `at` も常にあり、時点を渡さなかったときは `null`）で、`legal_status` は付かない。法律が国民を拘束すること（`binds_citizens: true`）は `explain_law_type { "name": "法律" }` の応答を根拠にする（houki-egov-mcp v0.15.1、2026-09-21 実測。`binds_courts` は返さない）。
 
-`search_fulltext` の応答で `source` が `"api-fallback"` なら本文検索は行われていない（`search_law` の結果が `fallback` に入っている）。その場合は `next_actions` の `bulk_download_everything`（`houki-egov-mcp --bulk-download-everything`）をユーザーに案内し、回答には「法令名の一致で探した」と書く。
+`search_fulltext` の応答で `source` が `"api-fallback"` なら本文検索は行われていない（`search_law` の結果が `fallback` に入っている）。ローカル DB が無いときのほか、houki-egov-mcp v0.19.0 以上では DB の版が合わないとき（v0.18.x 以前に作った古い版、新しい版、版を読めない DB）もこうなる。その場合は `note` の案内をユーザーに伝え（DB が無い・版が古いときは `next_actions` の `bulk_download_everything`、つまり `houki-egov-mcp --bulk-download-everything` での作り直し。版が新しいときは houki-egov-mcp の更新）、回答には「法令名の一致で探した」と書く。
 
 これが citation の **「法律 (法的根拠)」** セクションになる。
 
@@ -220,7 +220,7 @@ citation では、引いた条文を「法律 (法的根拠)」、通達を「�
 
 タックスアンサー (`nta_get_tax_answer`) には構造化された根拠法令が無い。本文の「根拠法令等」の節を読み、挙がっている法令を `get_law` で引く。
 
-8xxx 帯の docId は `nta_get_tax_answer` で取れない（`INVALID_ARGUMENT` で断られ、DB も引かない）。`nta_search_tax_answer` は 8xxx 帯の記事も返し、先頭が 8xxx でも `next_actions` は `nta_get_tax_answer` を案内する（houki-nta-mcp v0.23.0）ので、その案内には従わず、`results[].sourceUrl` を案内する。
+8xxx 帯（災害関係）の docId も、houki-nta-mcp v0.24.0 以上では `nta_get_tax_answer` で取れる。`nta_search_tax_answer` の `next_actions` が 8xxx の `nta_get_tax_answer` を案内したら、そのまま従ってよい。v0.23.x 以前は 8xxx を `INVALID_ARGUMENT` で断るので、その案内には従わず、`results[].sourceUrl` を案内する。
 
 ### ステップ ⑤: 改正履歴を検索
 

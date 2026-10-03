@@ -2,7 +2,7 @@
   "$comment": "自動生成（scripts/update-mcp-snapshots.mjs）。手で編集しないでください",
   "server": "houki-egov",
   "npm": "@shuji-bonji/houki-egov-mcp",
-  "version": "0.17.0",
+  "version": "0.19.0",
   "tools": [
     {
       "name": "explain_law_type",
@@ -49,7 +49,8 @@
         "format",
         "item",
         "law_name",
-        "paragraph"
+        "paragraph",
+        "suppl_index"
       ],
       "required": [
         "law_name"
@@ -149,7 +150,6 @@
     {
       "name": "search_fulltext",
       "properties": [
-        "domain",
         "keyword",
         "law_type",
         "limit",
@@ -163,7 +163,6 @@
     {
       "name": "search_law",
       "properties": [
-        "domain",
         "keyword",
         "law_type",
         "limit"
@@ -185,7 +184,7 @@
       "acceptsUnknownArgs": false
     }
   ],
-  "errorCodesSource": "https://github.com/shuji-bonji/houki-egov-mcp/blob/v0.17.0/specs/current/common_errors/spec.md",
+  "errorCodesSource": "https://github.com/shuji-bonji/houki-egov-mcp/blob/v0.19.0/specs/current/common_errors/spec.md",
   "errorCodes": [
     "ARTICLE_NOT_FOUND",
     "ATTACHMENT_NOT_FOUND",
