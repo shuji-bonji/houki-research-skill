@@ -5,7 +5,7 @@
       "name": "houki-egov",
       "column": "houki-egov-mcp",
       "npm": "@shuji-bonji/houki-egov-mcp",
-      "version": "0.19.0",
+      "version": "0.20.0",
       "repo": "shuji-bonji/houki-egov-mcp",
       "errorCodes": { "spec": "specs/current/common_errors/spec.md" }
     },
@@ -13,7 +13,7 @@
       "name": "houki-nta",
       "column": "houki-nta-mcp",
       "npm": "@shuji-bonji/houki-nta-mcp",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "repo": "shuji-bonji/houki-nta-mcp",
       "errorCodes": { "spec": "specs/current/common_errors/spec.md" }
     },
