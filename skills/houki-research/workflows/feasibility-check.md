@@ -82,7 +82,7 @@ sequenceDiagram
 | 分かっていること | 呼ぶ tool |
 |---|---|
 | 法令名（略称でも可） | `search_law { "keyword": "<法令名>" }` |
-| 法令名は不確かだが、語は分かる | `search_fulltext { "keyword": "<語> <語>" }`（ローカル DB が要る。DB が無いとき、また DB の版が houki-egov-mcp と合わないとき（v0.19.0 以上。v0.18.x 以前に作った DB など）は `source: "api-fallback"` で `search_law` に切り替わるので、回答で「法令名の一致で探した」と明示し、`note` の案内をユーザーに伝える） |
+| 法令名は不確かだが、語は分かる | `search_fulltext { "keyword": "<語> <語>" }`（ローカル DB が要る。DB が無い・開けないとき、また DB の版が houki-egov-mcp と合わないとき（v0.19.0 以上。v0.18.x 以前に作った DB など）は `source: "api-fallback"` で `search_law` に切り替わるので、回答で「法令名の一致で探した」と明示し、`note` の案内をユーザーに伝える） |
 | 分野だけ | `search_fulltext { "keyword": "<分野の語> <語>" }`（`search_law` / `search_fulltext` は分野で絞れない。houki-egov-mcp v0.18.0 以上は `domain` を渡すと `INVALID_ARGUMENT`。法令の種類で絞るなら `law_type`） |
 
 1 つの仕様が複数の法令に触れることが普通（電子取引の保存なら電子帳簿保存法と、その帳簿の元になる消費税法・法人税法）。**見つかった法令ごとに以下を繰り返す**。
@@ -268,7 +268,7 @@ houki-nta-mcp v0.18.x の基本通達は消基通・所基通・法基通・相�
 - ❌ 「適法です」「問題ありません」と書く → 当てはめ。応答型の「返さないもの」
 - ❌ 通達の要件を法律の要件と同じ行に書く → `legal_status` が消える。別の列か別の行にする
 - ❌ `get_law_revisions` を省く → 施行待ちの改正を見落とす。実装が稼働するのは数か月先なので、現行だけ見ても足りない
-- ❌ `search_fulltext` が `api-fallback` のまま「本文に無かった」と答える → 本文検索ができていない。「法令名の一致で探した」と書き、`note` の案内（DB が無い・版が古いときは `bulk_download_everything`、版が新しいときは houki-egov-mcp の更新）をユーザーに伝える
+- ❌ `search_fulltext` が `api-fallback` のまま「本文に無かった」と答える → 本文検索ができていない。「法令名の一致で探した」と書き、`note` の案内（`next_actions` に `bulk_download_everything` があればそのコマンド、無ければ `note` の続きの文が案内する houki-egov-mcp の更新や DB のパスの確認）をユーザーに伝える
 - ❌ 民法・会社法を `get_law` で丸ごと取る → 応答が長すぎる。条が分かっていれば `get_law`、章・節を通して読むなら `get_law_range`
 - ❌ `get_law_range` の `range.truncated` が `true` なのに、返った条だけで「この章の規定はこれだけ」と書く → `range.next_from_article` を `from_article` に渡して続きを取る
 - ❌ houki-nta-mcp に無い通達（電帳法取扱通達など）を「通達は無い」と答える → 対象外なだけ。「houki-nta-mcp の対象外」と書いて国税庁の URL を案内する

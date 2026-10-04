@@ -74,22 +74,68 @@ houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `n
 
 | 項目               | 内容                                                                                                   |
 | ------------------ | ------------------------------------------------------------------------------------------------------ |
-| 原因               | その種別を投入していない / `--bulk-download-everything` の途中でその種別だけ失敗した / bulk download を実行した環境と MCP サーバーとで DB のパス (`HOUKI_NTA_DB_PATH` / `XDG_CACHE_HOME`) が違う |
-| Skill の振る舞い   | 略称解決・検索でのフォールバックはしない (何度検索しても同じ)。**「該当なし」「国税庁の資料に無い」と答えない**。`next_actions[].example.command` の投入コマンドと、`hint` の DB のパスをユーザーに伝える |
+| 原因               | その種別を投入していない / `--bulk-download-everything` の途中でその種別だけ失敗した / bulk download を実行した環境と MCP サーバーとで DB のパス (`HOUKI_NTA_DB_PATH` / `XDG_CACHE_HOME`) が違う (MCP クライアントやプラグインから起動したサーバーは、シェルの環境変数を受け継がないことがある) |
+| Skill の振る舞い   | 略称解決・検索でのフォールバックはしない (何度検索しても同じ)。**「該当なし」「国税庁の資料に無い」と答えない**。`next_actions[].example.command` の投入コマンドと、`hint` の DB のパスをユーザーに伝える。ユーザーが投入したはずだと言うときは、下の「MCP サーバーが開いている DB を確かめる」の手順を案内する |
 | ユーザーに見せるか | 見せる (ユーザーの環境で投入が必要なため)                                                             |
-| メッセージ整形例   | 「質疑応答事例がローカル DB に入っていないため、検索できませんでした。`houki-nta-mcp --bulk-download-qa` で投入してください (DB: …/cache.db)」 |
+| メッセージ整形例   | 「質疑応答事例がローカル DB に入っていないため、検索できませんでした。`npx -y @shuji-bonji/houki-nta-mcp@latest --bulk-download-qa` で投入してください (DB: ~/.cache/houki-nta-mcp/cache.db)」 |
 
-houki-nta-mcp v0.24.0 以上では、ローカル DB の版がこの houki-nta-mcp で使えないときも、読むだけのツール（検索ツールと、改正通達・事務運営指針・文書回答事例の取得、`nta_inspect_pdf_meta`）は同じ code を返し、`hint` だけを DB の状態の文にする。`hint` が「MCP サーバーが開いている DB（…）の版」で始まるときは、投入していないのではなく DB の版が合っていない。
+houki-nta-mcp v0.24.0 以上では、ローカル DB の版がこの houki-nta-mcp で使えないときも、読むだけのツール（検索ツールと、改正通達・事務運営指針・文書回答事例の取得、`nta_inspect_pdf_meta`）は同じ code を返し、`hint` だけを DB の状態の文にする。houki-nta-mcp v0.25.0 以上では、`hint` の先頭の文で DB の状態が分かる（SPEC-NTA-DB-SCHEMA-029・021）。どの文も MCP サーバーが開こうとした DB のパス（ホームディレクトリの部分は `~`）を含む。文の中のコマンドは `next_actions[].example.command` と同じ `npx -y @shuji-bonji/houki-nta-mcp@latest <フラグ>` の形で、DB の場所を環境変数で決めて起動したときは `HOUKI_NTA_DB_PATH="$HOME/…" npx -y …` のように同じ変数が前に付く。
 
-| `hint` の内容 | `next_actions` | ユーザーに伝えること |
-| --- | --- | --- |
-| 版が古く移行できない（版 1・2） | 投入の案内（`cli_bulk_download`） | 投入のフラグ（`houki-nta-mcp --quickstart` など）を実行すると作り直されること。取り込んだ中身は消える |
-| 版がこの houki-nta-mcp より新しい | 投入の案内は無い | houki-nta-mcp を新しい版に更新すること。投入のフラグを実行しても終了コード 1 で止まる |
-| 版を読めない | 投入の案内は無い | DB ファイルを消してから投入のフラグを実行すること |
+| `hint` の先頭（v0.25.0 以上） | DB の状態 | `next_actions` | ユーザーに伝えること |
+| --- | --- | --- | --- |
+| `ローカル DB（<パス>）がありません` | ファイルが無い（DB の場所の設定が既定か `XDG_CACHE_HOME`） | 投入の案内（`cli_bulk_download`） | 案内のコマンドで投入すること |
+| `HOUKI_NTA_DB_PATH が指すファイル（<パス>）がありません` | `HOUKI_NTA_DB_PATH` が無いファイルを指している | 投入の案内（`cli_bulk_download`） | `HOUKI_NTA_DB_PATH` を投入した DB のファイルに直すか、案内のコマンドでそのパスに投入すること |
+| `ローカル DB（<パス>）にはまだ何も投入されていません` | ファイルはあるが版の記録が無い（0 バイトのファイルなど） | 投入の案内（`cli_bulk_download`） | 案内のコマンドで投入すること |
+| `ローカル DB（<パス>）に<種別>（doc_type="<doc_type>"）が入っていません` | DB は使えるが、その種別が 1 件も無い（他の種別だけがある DB を含む） | 投入の案内（`cli_bulk_download`） | 案内のコマンドで投入すること。投入したはずなら、投入したシェルで `--status` を実行し、表示される DB がこのパスと同じか確かめること（`hint` にも同じ手順が書いてある） |
+| `ローカル DB（<パス>）の版 (<DB の版>) は古く移行できないため` | 版 1・2 | 投入の案内（`cli_bulk_download`） | 投入のフラグ（`npx -y @shuji-bonji/houki-nta-mcp@latest --quickstart` など）を実行すると作り直されること。取り込んだ中身は消える |
+| `ローカル DB（<パス>）の版 (<DB の版>) がこの houki-nta-mcp の版 (12) より新しいため` | 版 13 以上 | 投入の案内は無い | houki-nta-mcp を新しい版に更新すること。投入のフラグを実行しても終了コード 1 で止まる |
+| `ローカル DB（<パス>）の版を読めないため` | 版の値が整数として読めない | 投入の案内は無い | DB ファイルを消してから投入のフラグを実行すること |
+
+`nta_search_tsutatsu` で通達が 1 件も無いときと、`nta_inspect_pdf_meta` で DB はあるがその種別が無いときの `hint` は、4 行目と違う文になる（SPEC-NTA-SEARCH-TSUTATSU-003、SPEC-NTA-INSPECT-PDF-META-001）。版 3〜11 の DB は、読むだけのツールが開いたときに行を保ったまま版 12 に移行してから引くので、この表のどれにも当たらない。
+
+houki-nta-mcp v0.24.x では、`hint` の先頭はどの場面でも `MCP サーバーが開いている DB（<絶対パス>）に…が入っていません`（`nta_search_tsutatsu` は `初回は …` でパスなし）、版の合わない DB では `MCP サーバーが開いている DB（<絶対パス>）の版 …` で、ファイルが無いのか空なのかを区別しない。コマンドは `houki-nta-mcp --<フラグ>` の形で、グローバルにインストールしていないと動かないので、ユーザーには `npx -y @shuji-bonji/houki-nta-mcp@latest --<フラグ>` に読み替えて伝える。
 
 版が新しい DB は、多くの場合、新しい版の houki-nta-mcp で作った DB を古い版の MCP サーバーが開いている（MCP クライアントやプラグインの版が古い）ときに起きる。
 
 キーワードに合わないだけの 0 件は、エラーではなく `results: []` と、検索した件数を書いた `hint` で返る。こちらは「その語を含む文書は無い」という検索結果として扱ってよい。
+
+### `search_fulltext` の `api-fallback`（houki-egov-mcp。エラーではない）
+
+houki-egov-mcp の `search_fulltext` は、ローカル DB を引けないときエラーを返さず、`source: "api-fallback"` で `search_law`（法令名のタイトル一致）の結果を `fallback` に入れて返す。本文検索はできていないので、回答で「法令名の一致で探した」と明示し、`note` の案内をユーザーに伝える（[`SKILL.md`](../SKILL.md) の鉄則 3）。
+
+houki-egov-mcp v0.20.0 以上では、`note` は `<先頭>、search_law (法令名のタイトル一致) にフォールバックしています。<続き>` の形で、`<先頭>` に MCP サーバーが開こうとした DB のパス（ホームディレクトリの部分は `~`）が入る（SPEC-EGOV-SEARCH-FULLTEXT-044）。`<続き>` と `next_actions` の中のコマンドは `npx -y @shuji-bonji/houki-egov-mcp@latest --bulk-download-everything` の形で、DB の場所を環境変数で決めて起動したときは `HOUKI_EGOV_DB_PATH="$HOME/…" npx -y …` のように同じ変数が前に付く。
+
+| `note` の先頭（v0.20.0 以上） | DB の状態 | `next_actions` | ユーザーに伝えること |
+| --- | --- | --- | --- |
+| `ローカル DB (<パス>) が無いため` | ファイルが無い（DB の場所の設定が既定か `XDG_CACHE_HOME`） | 1 件目 `bulk_download_everything`、2 件目 `search_law` | `bulk_download_everything` の `example.command` で DB を構築すること |
+| `HOUKI_EGOV_DB_PATH が指すファイル (<パス>) が無いため` | `HOUKI_EGOV_DB_PATH` が無いファイルを指している | 同上 | `HOUKI_EGOV_DB_PATH` を作ってある DB のファイルに直すか、`example.command` でそのパスに DB を構築すること |
+| `ローカル DB (<パス>) にまだ法令が取り込まれていないため` | ファイルはあるが版の記録が無い、または条が 1 件も無い | 同上 | `example.command` で DB を構築すること |
+| `ローカル DB (<パス>) の版 (<DB の版>) がこの houki-egov-mcp (3) より古いため` | v0.18.x 以前に作った DB（版 1・2） | 同上 | `example.command` で作り直すこと。取り込んだ中身は消え、全件の zip 約 290 MB を取り直す |
+| `ローカル DB (<パス>) の版 (<DB の版>) がこの houki-egov-mcp (3) より新しいため` | 新しい版の houki-egov-mcp で作った DB | `search_law` の 1 件だけ | houki-egov-mcp（MCP サーバー・plugin）を新しい版に更新すること。DB は変更されていない |
+| `ローカル DB (<パス>) の版を読めないため (schema_version: <値>)` | 版の値が読めない | `search_law` の 1 件だけ | DB ファイルを消してから `npx -y @shuji-bonji/houki-egov-mcp@latest --bulk-download-everything` を実行すること |
+| `ローカル DB (<パス>) を開けなかったため` | パスがフォルダー、途中が普通のファイル、読む権限が無い、SQLite でないファイル | `search_law` の 1 件だけ | パスと権限を確かめること（`HOUKI_EGOV_DB_PATH` を設定しているときはその値を直す）。`--bulk-download-everything` もこの DB では取得の前に止まるので案内しない |
+
+houki-egov-mcp v0.19.x 以前の `note` は `bulk DL 未実行のため` / `bulk DB を開けなかったため` / `bulk DB の版 (<n>) が…` / `bulk DB の版を読めないため …` で始まり、DB のパスを含まない。コマンドは `houki-egov-mcp --bulk-download-everything` で、グローバルにインストールしていないと動かないので、ユーザーには `npx -y @shuji-bonji/houki-egov-mcp@latest --bulk-download-everything` に読み替えて伝える。v0.19.x 以前は、開けない DB にも `bulk_download_everything` を案内していた。
+
+DB を引けた応答（`source: "bulk"`）では、`freshness.db_path` に引いた DB のパスが入る（v0.20.0 以上）。`freshness` は常に 5 つのキーを持つオブジェクトで、同期の記録が無い DB では鮮度の 4 つが `null`、`api-fallback` では `db_path` を含む 5 つとも `null` になる（SPEC-EGOV-SEARCH-FULLTEXT-043）。`freshness` の有無ではなく `source` で、本文検索ができたかを判断する。
+
+### MCP サーバーが開いている DB を確かめる（`--status`）
+
+ユーザーが投入したはずなのに、houki-egov-mcp の `api-fallback`（`無いため` / `まだ法令が取り込まれていないため`）や houki-nta-mcp の `cli_bulk_download` 付きの `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND` が返るときは、MCP サーバーと投入した CLI とで別の DB ファイルを開いていることが多い。MCP クライアントやプラグインから起動したサーバーは、シェルの環境変数（`HOUKI_EGOV_DB_PATH` / `HOUKI_NTA_DB_PATH` / `XDG_CACHE_HOME`）を受け継がないことがある。このときはユーザーに、投入したシェルで次のコマンドを実行してもらう。
+
+| MCP | コマンド | 使える版 |
+| --- | --- | --- |
+| houki-egov-mcp | `npx -y @shuji-bonji/houki-egov-mcp@latest --status` | 3 行目の「DB の場所の設定」と `[WARN]` は v0.20.0 以上 |
+| houki-nta-mcp | `npx -y @shuji-bonji/houki-nta-mcp@latest --status` | v0.25.0 以上（v0.24.x 以前は `ERROR: 未知のフラグ: --status` で終了コード 2） |
+
+どちらも DB を作らず、書き換えない（houki-nta-mcp は版 3〜11 の DB も移行しない）。出力は次のとおり読む。
+
+- 2 行目 `  DB: <パス>`: そのシェルの設定で開く DB。応答の `note` / `hint` のパスと `freshness.db_path` はホームディレクトリの部分を `~` で書き、`--status` は絶対パス（環境変数で指定したときはその値のまま）で書くので、`~` を読み替えて比べる
+- 3 行目 `  DB の場所の設定: <名前>`: DB の場所を決めた設定。`既定` / `XDG_CACHE_HOME` / `HOUKI_EGOV_DB_PATH`（houki-nta-mcp は `HOUKI_NTA_DB_PATH`、CLI に付けたときは `--db-path`）
+- `[WARN] 同じフォルダーに、この DB のほかに laws*.db のファイルがあります: …`（houki-nta-mcp は `cache*.db`）: 同じフォルダーに別の DB ファイルがある。応答のパスと比べ、MCP サーバーと CLI がどちらのファイルを開いているかを確かめる
+- その後の行: 件数（houki-nta-mcp は通達と 5 種別ごとの件数・取得日時の範囲）、または `  (DB がまだありません — …)` の行
+
+MCP サーバーの起動時のログ（標準エラー出力）にも、開く DB の絶対パスと設定の名前を書いた `DB: <絶対パス>（DB の場所の設定: <名前>）` の行が出る（houki-egov-mcp v0.20.0・houki-nta-mcp v0.25.0 以上）。
 
 ### `ABBREVIATION_NOT_FOUND`
 
@@ -165,7 +211,7 @@ houki-egov-mcp は 429 をサーバーの中で取り直してからこの code 
 | Skill の振る舞い   | `INTERNAL_ERROR` は再試行しない。houki-egov-mcp v0.17.0・houki-nta-mcp v0.23.0 以上では、処理中の想定外の例外もページの解析の失敗も `retryable: false` で、`next_actions`（`retry_later`）は付かない。同じ呼び出しを繰り返さず、代替手段で回答するか、ユーザーに「該当 MCP に不具合がある可能性」と伝え、呼んだツール名・引数・応答の `error` / `detail.cause`（再現手順）を添えて GitHub の Issue での報告を勧める。`UNKNOWN_TOOL`（`retryable: false`）も同じ呼び出しは繰り返さず、tools/list で呼べるツールを確かめ、正しいツール名で呼び直す（ユーザーには見せない） |
 | ユーザーに見せるか | `INTERNAL_ERROR` は代替手段で答えられなかったとき。`UNKNOWN_TOOL` は見せない                               |
 
-例外として、ローカル DB の日付を読めないときの `INTERNAL_ERROR` は MCP のバグではない。houki-nta-mcp（v0.22.0 以上）は DB の取得時点（`fetched_at`）を、houki-egov-mcp（v0.16.0 以上）は同期の記録の日付（`sync_state.last_sync_date`）を読めないとき、`INTERNAL_ERROR`・`retryable: false` を返し、取り込みのやり直しを案内する。案内は、houki-nta-mcp では `next_actions` の `cli_bulk_download`（`example.command` にその種別の投入コマンド）、houki-egov-mcp では `hint`（`houki-egov-mcp --bulk-download-everything`）にある。このときは不具合として報告せず、案内のコマンドをユーザーに伝える。`error` が `取得時点を読めません:` / `同期の記録の日付を読めません:` で始まるかで見分けられる。
+例外として、ローカル DB の日付を読めないときの `INTERNAL_ERROR` は MCP のバグではない。houki-nta-mcp（v0.22.0 以上）は DB の取得時点（`fetched_at`）を、houki-egov-mcp（v0.16.0 以上）は同期の記録の日付（`sync_state.last_sync_date`）を読めないとき、`INTERNAL_ERROR`・`retryable: false` を返し、取り込みのやり直しを案内する。案内は、houki-nta-mcp では `next_actions` の `cli_bulk_download`（`example.command` にその種別の投入コマンド）、houki-egov-mcp では `hint`（v0.20.0 以上は `npx -y @shuji-bonji/houki-egov-mcp@latest --bulk-download-everything`、v0.19.x 以前は `houki-egov-mcp --bulk-download-everything`）にある。このときは不具合として報告せず、案内のコマンドをユーザーに伝える。`error` が `取得時点を読めません:` / `同期の記録の日付を読めません:` で始まるかで見分けられる。
 
 ## メッセージ整形 — 共通テンプレート
 

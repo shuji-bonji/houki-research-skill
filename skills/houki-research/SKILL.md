@@ -117,7 +117,7 @@ sequenceDiagram
 | 法令名すら不確か | `search_law` → `get_law` | `{ "keyword": "適格請求書" }` で法令名を探す |
 | 「どの法令の何条に書いてあるか」自体が不明 | `search_fulltext` → `get_law` | `{ "keyword": "民法 不法行為" }` で条文本文を横断検索 |
 
-`search_fulltext` はローカル DB (`houki-egov-mcp --bulk-download-everything` で構築) を引く。DB が無いとき、また DB の版がこの houki-egov-mcp と合わない (houki-egov-mcp v0.19.0 以上。v0.18.x 以前に作った古い版、新しい版、版を読めない DB) ときは、応答の `source` が `"api-fallback"` になり、`search_law` の結果が `fallback` に入って返る。このときは **本文検索ができていない**ので、回答で「法令名の一致で探した」と明示し、`note` の案内をユーザーに伝える。DB が無い・版が古いときは `next_actions` の `bulk_download_everything` (DB の作り直し) を、版が新しいときは houki-egov-mcp の更新を、版を読めないときは DB ファイルを消してからの `--bulk-download-everything` を案内する (`note` の文がそれぞれ違う)。
+`search_fulltext` はローカル DB (`npx -y @shuji-bonji/houki-egov-mcp@latest --bulk-download-everything` で構築) を引く。DB を引けないとき (DB が無い・まだ法令が取り込まれていない・開けないとき、また houki-egov-mcp v0.19.0 以上では DB の版がこの houki-egov-mcp と合わないとき) は、応答の `source` が `"api-fallback"` になり、`search_law` の結果が `fallback` に入って返る。このときは **本文検索ができていない**ので、回答で「法令名の一致で探した」と明示し、`note` の案内をユーザーに伝える。`next_actions` に `bulk_download_everything` があればその `example.command` (DB の構築・作り直し) を、無ければ `note` の続きの文 (houki-egov-mcp の更新、DB ファイルを消してからの構築、DB のパスの確認) を案内する。houki-egov-mcp v0.20.0 以上では、`note` の先頭に MCP サーバーが開こうとした DB のパスが入る。先頭の文ごとの DB の状態と、投入したはずなのに DB が見つからないときに `--status` で DB の場所を確かめる手順は、[`docs/ERROR-HANDLING.md`](docs/ERROR-HANDLING.md) の「`search_fulltext` の `api-fallback`」と「MCP サーバーが開いている DB を確かめる」にある。
 
 #### 通達や質疑応答事例を先に引いたら、法律本文へ戻る (houki-nta-mcp v0.11.0 以上。質疑応答事例は v0.12.0 以上)
 
@@ -216,7 +216,7 @@ houki-nta-mcp が v0.18.x 以前だと `read_strategy` / `layout_note` / `saved`
 - 現在の取扱いを問われているなら、同じ論点の現行の文書を探し直す。見つからなければ「索引から外れた文書しか見つからなかった」と書き、断定しない
 - citation では、`index_status` が `"removed_from_index"` であることと `orphaned_at` を注に残す ([`docs/CITATION.md`](docs/CITATION.md))
 
-`freshness` の `stale` / `outdated` とは別のことを指す。`freshness` は「最後に取得してから日が経った」で、`index_status` は「国税庁の索引から外れた」。ローカル DB が新しくても印は付く。
+`freshness` の `stale` / `outdated` とは別のことを指す。`freshness` は「最後に取得してから日が経った」で、`index_status` は「国税庁の索引から外れた」。ローカル DB が新しくても印は付く。houki-nta-mcp v0.24.1 以上では、索引から外れた文書は `freshness` の範囲に入らないので、投入をやり直せば `freshness` は `fresh` に戻る (v0.24.0 以前は、索引から外れた文書の古い取得日時のせいで `stale` / `outdated` のまま残ることがあった)。
 
 houki-nta-mcp が v0.16.x 以前だと `index_status` は付かない。そのときは索引から消えた文書を現行の文書と区別できないので、`sourceUrl` が 404 になる文書に当たったら、その旨を citation に書く。
 
@@ -339,6 +339,7 @@ MCP を組み込む開発者は問いを投げる利用者ではなく、契約�
 - houki-nta-mcp の bulk DL (`--bulk-download-everything`) が初回完了済みであること
 - houki-egov-mcp の `search_fulltext` で条文本文を探すなら、houki-egov-mcp の bulk DL (`--bulk-download-everything`、全件の zip 約 290 MB) が済んでいること。houki-egov-mcp v0.19.0 で DB の版が 3 になり、v0.18.x 以前に作った DB は使えない。v0.19.0 以上の `--bulk-download-everything` で作り直す。作り直した DB を v0.18.x 以前の houki-egov-mcp で開くと全テーブルが消えるので、作り直した後は CLI と MCP サーバー (plugin) の版を v0.19.0 以上にそろえる
 - houki-nta-mcp v0.24.0 で DB の版が 12 になった。v0.23.x 以前で作った DB は、v0.24.0 の CLI かツールが最初に開いたときに行を保ったまま移行されるので、取り込み直しは要らない。移行した DB を v0.23.x 以前の houki-nta-mcp で開くと全テーブルが消えて作り直されるので、v0.23.x 以前に戻すときは `HOUKI_NTA_DB_PATH` で別の DB ファイルを指す
+- houki-egov-mcp v0.20.0・houki-nta-mcp v0.25.0 以上では、応答と CLI が案内するコマンドは `npx -y @shuji-bonji/<パッケージ>@latest <フラグ>` の形 (環境変数で DB の場所を決めて起動したときは、同じ変数が前に付く)。この Skill の文書でフラグだけを書いているところ (`--bulk-download-everything` など) も、この形で実行する。MCP サーバーと CLI が同じ DB を開いているかは、両 MCP の `--status` で確かめる ([`docs/ERROR-HANDLING.md`](docs/ERROR-HANDLING.md) の「MCP サーバーが開いている DB を確かめる」)
 
 設定方法は houki-nta-mcp の [`docs/HOUKI-FAMILY-INTEGRATION.md`](https://github.com/shuji-bonji/houki-nta-mcp/blob/main/docs/HOUKI-FAMILY-INTEGRATION.md) に詳細あり。
 

@@ -108,7 +108,7 @@ flowchart LR
 | フィールド     | 内容                                                                       | どの MCP で必須か              |
 | -------------- | -------------------------------------------------------------------------- | ------------------------------ |
 | `legal_status` | `binds_citizens` / `binds_courts` / `binds_tax_office` 等の Boolean フラグ | houki-nta-mcp / houki-egov-mcp |
-| `freshness`    | `staleness` (`fresh` / `stale` / `outdated`) + `oldest_fetched_at`         | houki-nta-mcp                  |
+| `freshness`    | ローカル DB の鮮度。`staleness` (`fresh` / `stale` / `outdated`) と、houki-nta-mcp は `oldest_fetched_at` / `newest_fetched_at`、houki-egov-mcp は `last_sync_date`。`db_path` は引いた DB のパス (ホームディレクトリの部分は `~`)。値が無いときは `null` になるので、キーの有無ではなく値で見る | houki-nta-mcp の検索 6 ツール (v0.25.0+ はエラーでない応答に常に付き、範囲に文書が無いときは取得日時と `staleness` が `null`。v0.24.1+ は索引から消えた文書を範囲に入れない) / houki-egov-mcp の `search_fulltext` (v0.20.0+ は常に 5 つのキーを持ち、`api-fallback` では 5 つとも `null`) |
 | `sourceUrl`    | 一次情報の URL (取得元の永続リンク)                                        | 全 MCP                         |
 | `fetched_at`   | 取得時刻 (ISO 8601)                                                        | 全 MCP                         |
 | `attachedPdfs` | `kind` / `url` / `sizeKb` 付きの添付 PDF メタ                              | houki-nta-mcp                  |
@@ -119,7 +119,7 @@ flowchart LR
 | `related_laws` / `related_tsutatsu` | 質疑応答事例の【関係法令通達】を法令 (`law_name` / `article` / `paragraph` / `item` / `appendix` / `raw`) と通達 (`name` / `clause` / `raw`) に分けたもの。枝番号の号は `item: "12の8"` の文字列 (v0.14.0+) | houki-nta-mcp v0.12.0+ (`nta_get_qa`、`format: "json"`) |
 | `qa.notice` / `qa.basisDate` | 質疑応答事例のページ下部の注記と、その作成基準日。値が無ければ `null` | houki-nta-mcp v0.12.0+ |
 | `results[].issuedAt` / `results[].basisDate` / `taxAnswer.basisDate` | 検索結果の発出日 (改正通達・事務運営指針・文書回答事例。質疑応答事例・タックスアンサーは常に `null`) と、タックスアンサーの記事の「法令時点」から読んだ日付 (発出日ではない。ほかの種別は常に `null`)。値が無いときもキーは持つ | houki-nta-mcp v0.23.0+ (`basisDate`。`issuedAt` はそれ以前からあり、値が無いときはキーが付かなかった) |
-| `source` | その応答をローカル DB (`"db"`) と取得元 (`"live"`) のどちらから返したか。`"db"` のとき `fetched_at` は取り込んだ日時 | houki-nta-mcp の取得ツール (`nta_get_qa` / `nta_get_tax_answer` は v0.16.0+) / houki-egov-mcp の `search_fulltext` (DB が無いとき、v0.19.0 以上で DB の版が合わないときは `"api-fallback"`) |
+| `source` | その応答をローカル DB (`"db"`) と取得元 (`"live"`) のどちらから返したか。`"db"` のとき `fetched_at` は取り込んだ日時 | houki-nta-mcp の取得ツール (`nta_get_qa` / `nta_get_tax_answer` は v0.16.0+) / houki-egov-mcp の `search_fulltext` (DB を引けないとき (DB が無い・開けない、v0.19.0 以上では DB の版が合わない) は `"api-fallback"`) |
 | `index_status` / `orphaned_at` | 国税庁の索引から外れた文書の印 (`"removed_from_index"`) と、それを最初に確認した日時。索引にある文書では `null` (v0.22.x まではキーが付かない) | houki-nta-mcp v0.17.0+ (`nta_search_*` の各件と `nta_get_*`) |
 
 これらが揃うことで、Skill 層は「**どの情報をどの順序で引用するか**」を機械的に決められる。

@@ -120,13 +120,13 @@ LLM は目次から「**第 57 条の 2**」が登録番号関連と当たりを
 { "tool": "nta_get_kaisei_tsutatsu", "args": { "docId": "0025004-999" } }
 ```
 
-`isError: true` で以下が返る (houki-nta-mcp v0.22.0。改正通達が DB に入っている場合。v0.21.x までは `code` が `TSUTATSU_NOT_FOUND` で、ほかのフィールドは同じ):
+`isError: true` で以下が返る (houki-nta-mcp v0.22.0 の実測で、`hint` の末尾のコマンドだけを v0.25.0 の形に直したもの。v0.24.x までのコマンドは `houki-nta-mcp --bulk-download-kaisei`。改正通達が DB に入っている場合。v0.21.x までは `code` が `TSUTATSU_NOT_FOUND` で、ほかのフィールドは同じ):
 
 ```json
 {
   "error": "改正通達 docId=\"0025004-999\" は見つかりません",
   "code": "DOC_NOT_FOUND",
-  "hint": "DB の改正通達 118 件に、この docId はありません。available_doc_ids（新しい順に 30 件）から選ぶか、nta_search_kaisei_tsutatsu で検索して docId を確かめてください。DB を投入した後に国税庁が公開した文書は、`houki-nta-mcp --bulk-download-kaisei` をもう一度実行すると取り込めます",
+  "hint": "DB の改正通達 118 件に、この docId はありません。available_doc_ids（新しい順に 30 件）から選ぶか、nta_search_kaisei_tsutatsu で検索して docId を確かめてください。DB を投入した後に国税庁が公開した文書は、`npx -y @shuji-bonji/houki-nta-mcp@latest --bulk-download-kaisei` をもう一度実行すると取り込めます",
   "available_doc_ids": [
     {
       "docId": "0026003-067",
@@ -161,7 +161,7 @@ houki-nta-mcp 固有の `available_doc_ids` (新しい順に 30 件、`docId` / 
 
 候補が外れていれば `next_actions[0]` の `nta_search_kaisei_tsutatsu` にキーワードを添えて検索する。
 
-改正通達が DB に 1 件も入っていない場合は、同じ `code` でも中身が変わる。`error` が「ローカル DB に改正通達が 1 件も無いため、docId=… を取得できません」、`next_actions[0].action` が `cli_bulk_download` になり、`available_doc_ids` は付かない。このときは docId を探し直さず、投入コマンド (`houki-nta-mcp --bulk-download-kaisei`) と DB のパスをユーザーに伝える ([`docs/ERROR-HANDLING.md`](../docs/ERROR-HANDLING.md) の該当節)。
+改正通達が DB に 1 件も入っていない場合は、同じ `code` でも中身が変わる。`error` が「ローカル DB に改正通達が 1 件も無いため、docId=… を取得できません」、`next_actions[0].action` が `cli_bulk_download` になり、`available_doc_ids` は付かない。このときは docId を探し直さず、投入コマンド (`next_actions[0].example.command`。v0.25.0 以上は `npx -y @shuji-bonji/houki-nta-mcp@latest --bulk-download-kaisei` の形) と、`hint` の DB のパスをユーザーに伝える ([`docs/ERROR-HANDLING.md`](../docs/ERROR-HANDLING.md) の該当節)。
 
 ### 期待される回答
 

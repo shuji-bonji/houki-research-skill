@@ -126,7 +126,7 @@ houki-nta-mcp v0.23.0 以上では、houki-egov の管轄のエントリ（`in_s
 
 `get_law` の応答は条文本文と `meta`（`law_id` / `title` / `law_num` / `retrieved_at` / `url`。houki-egov-mcp v0.17.0 以上では `at` も常にあり、時点を渡さなかったときは `null`）で、`legal_status` は付かない。法律が国民を拘束すること（`binds_citizens: true`）は `explain_law_type { "name": "法律" }` の応答を根拠にする（houki-egov-mcp v0.15.1、2026-09-21 実測。`binds_courts` は返さない）。
 
-`search_fulltext` の応答で `source` が `"api-fallback"` なら本文検索は行われていない（`search_law` の結果が `fallback` に入っている）。ローカル DB が無いときのほか、houki-egov-mcp v0.19.0 以上では DB の版が合わないとき（v0.18.x 以前に作った古い版、新しい版、版を読めない DB）もこうなる。その場合は `note` の案内をユーザーに伝え（DB が無い・版が古いときは `next_actions` の `bulk_download_everything`、つまり `houki-egov-mcp --bulk-download-everything` での作り直し。版が新しいときは houki-egov-mcp の更新）、回答には「法令名の一致で探した」と書く。
+`search_fulltext` の応答で `source` が `"api-fallback"` なら本文検索は行われていない（`search_law` の結果が `fallback` に入っている）。ローカル DB が無い・開けないときのほか、houki-egov-mcp v0.19.0 以上では DB の版が合わないとき（v0.18.x 以前に作った古い版、新しい版、版を読めない DB）もこうなる。その場合は `note` の案内をユーザーに伝え（`next_actions` に `bulk_download_everything` があればその `example.command`。v0.20.0 以上では `npx -y @shuji-bonji/houki-egov-mcp@latest --bulk-download-everything` の形。無ければ `note` の続きの文が案内する houki-egov-mcp の更新や DB のパスの確認）、回答には「法令名の一致で探した」と書く。`note` の先頭の文ごとの DB の状態と、投入したはずのときに DB の場所を確かめる手順は [`docs/ERROR-HANDLING.md`](../docs/ERROR-HANDLING.md) の「`search_fulltext` の `api-fallback`」にある。
 
 これが citation の **「法律 (法的根拠)」** セクションになる。
 
