@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.19.0] - 2026-10-05
+
+**minor リリース** — houki-egov-mcp 0.19.1・0.20.0 / houki-nta-mcp 0.24.1・0.25.0 に追随します。4 つの版とも 2026-10-04〜05 に publish されました。文の言い換えだけでなく、「DB が見つからない」ときに `--status` で DB の場所を確かめる手順を足したので、minor にしました。
+
+### Changed
+
+- **`scripts/mcp-refs.config.json` の版**: houki-egov-mcp 0.19.0 → 0.20.0、houki-nta-mcp 0.24.0 → 0.25.0。`mcp-snapshots/` を作り直しましたが、ツール名・引数名・code の一覧は変わらず、版と `errorCodesSource` のタグだけが変わりました（ツール 14 / 14、code 14 / 12）
+- **`docs/ERROR-HANDLING.md` の `cli_bulk_download` の `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND`**: nta 0.25.0 の `hint` の先頭ごとの表（ファイルが無い・`HOUKI_NTA_DB_PATH` が指すファイルが無い・版の記録が無い・その種別が無い・版が古い・新しい・読めない）に直しました（SPEC-NTA-DB-SCHEMA-029・021）。「`hint` が「MCP サーバーが開いている DB（…）の版」で始まるときは」の見分けの文は v0.24.x の文として残し、メッセージ整形例のコマンドとパスを新しい形にしました
+- **`search_fulltext` の `api-fallback` の説明**（`SKILL.md`・`workflows/tax-research.md`・`workflows/feasibility-check.md`・`docs/ARCHITECTURE.md`）: egov 0.20.0 で、開けない DB には `bulk_download_everything` を案内しなくなったので、「`next_actions` に `bulk_download_everything` があればそのコマンド、無ければ `note` の続きの文」で案内する書き方にしました（SPEC-EGOV-SEARCH-FULLTEXT-044）
+- **案内のコマンドの形**: `houki-egov-mcp --<フラグ>` / `houki-nta-mcp --<フラグ>` と書いていた箇所（README、`SKILL.md`、`workflows/tax-research.md`、`docs/ERROR-HANDLING.md`、`examples/error-recovery-patterns.md`）を `npx -y @shuji-bonji/<パッケージ>@latest --<フラグ>` にしました（SPEC-EGOV-DB-SCHEMA-029、SPEC-NTA-DB-SCHEMA-027）。`examples/error-recovery-patterns.md` のシナリオの `hint` は v0.22.0 の実測で、末尾のコマンドだけを v0.25.0 の形に直したことを書きました
+- **`docs/ARCHITECTURE.md` の応答契約の `freshness` の行**: `db_path`、houki-egov-mcp の `search_fulltext`、値が無いときは `null` になること（nta 0.25.0 は常に付く。egov 0.20.0 は常に 5 つのキー）を足しました
+- **README の推奨最小バージョンの表**: houki-egov-mcp に v0.20.0、houki-nta-mcp に v0.24.1・v0.25.0 の変更を足しました
+
+### Added
+
+- **`docs/ERROR-HANDLING.md` の「`search_fulltext` の `api-fallback`」**: egov 0.20.0 の `note` の先頭 7 つと、DB の状態・`next_actions`・ユーザーに伝えることの表です。v0.19.x 以前の `note` の先頭と、`freshness.db_path`（SPEC-EGOV-SEARCH-FULLTEXT-043）も書きました
+- **`docs/ERROR-HANDLING.md` の「MCP サーバーが開いている DB を確かめる（`--status`）」**: 投入したはずなのに DB が見つからないとき、投入したシェルで両 MCP の `--status` を実行し、2 行目の DB のパス・3 行目の「DB の場所の設定」・同じフォルダーの別の DB の `[WARN]` を応答のパスと比べる手順です（SPEC-EGOV-CLI-STATUS-013・014、SPEC-NTA-CLI-STATUS-001・002）
+- **`SKILL.md` の「利用前提」と README**: 案内のコマンドが npx の形になったこと、フラグだけを書いた箇所もこの形で実行すること、DB の場所は `--status` で確かめることを足しました
+- **`SKILL.md` の索引から消えた文書の節**: nta 0.24.1 から、索引から消えた文書は `freshness` の範囲に入らず、投入をやり直せば `fresh` に戻ることを足しました（SPEC-NTA-SEARCH-RULES-017）
+
+### 確かめたこと
+
+- 2026-10-05 JST に `houki-egov-mcp --` / `houki-nta-mcp --` / `api-fallback` / `MCP サーバーが開いている DB` / `cache.db` / `laws.db` / `db_path` / `freshness` / `--status` で grep し直しました。egov 0.19.1 の `--sync` の「状態の更新」の行と `[WARN] 施行日が last_sync_date …` は、Skill が `--sync` の出力を引用していないので足していません。`examples/invoice-registration.md` 38・39 行目は版を書いた実測の記録なので、そのままにしました
+- `node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 251 か所、code 160 か所）。`node --test 'scripts/test/*.test.mjs'` は 19 件とも通りました
+
 ## [0.18.0] - 2026-10-04
 
 **minor リリース** — houki-egov-mcp 0.18.0・0.19.0 / houki-nta-mcp 0.24.0 に追随。3 つの版とも 2026-10-04 に publish された。houki-hub `docs/DECISIONS.md`（2026-09-29）の T2 の「互換の扱い」に従い、MCP を publish した日に `docs/ERROR-CODES.md` を直す。
