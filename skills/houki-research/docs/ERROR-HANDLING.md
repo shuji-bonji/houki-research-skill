@@ -68,9 +68,9 @@ houki-egov-mcp の `search_law` も、houki-egov の管轄でない略称（`消
 
 ### `next_actions` が `cli_bulk_download` の `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND` (ローカル DB に無い)
 
-houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `nta_search_kaisei_tsutatsu` / `nta_search_jimu_unei` / `nta_search_bunshokaitou`。v0.13.0 以上) は、その種別の文書がローカル DB に 1 件も無いとき `DOC_NOT_FOUND` を返す。`nta_search_tsutatsu` は通達が 1 件も無いとき `TSUTATSU_NOT_FOUND` を返す。取得ツール (`nta_get_kaisei_tsutatsu` / `nta_get_jimu_unei` / `nta_get_bunshokaitou`。v0.14.1 以上) も、その種別の文書が 1 件も無いときは同じ形で返す。いずれも `next_actions` の `action` が `cli_bulk_download` になっている。上の「docId が誤っている」ときの `*_NOT_FOUND` とは原因が違う。
+houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `nta_search_kaisei_tsutatsu` / `nta_search_jimu_unei` / `nta_search_bunshokaitou`。v0.13.0 以上) は、その種別の文書がローカル DB に 1 件も無いとき `DOC_NOT_FOUND` を返す。`nta_search_tsutatsu` は通達が 1 件も無いとき `TSUTATSU_NOT_FOUND` を返す。取得ツール (`nta_get_kaisei_tsutatsu` / `nta_get_jimu_unei` / `nta_get_bunshokaitou`。v0.14.1 以上) も、その種別の文書が 1 件も無いときは同じ形で返す。投入で直る場面（下の表で `next_actions` が「投入の案内」の行）では、いずれも `next_actions` の `action` が `cli_bulk_download` になっている。版が新しい・読めない DB と、DB を開けないとき（houki-nta-mcp v0.26.0 以上）は、同じ code でも `cli_bulk_download` が入らない。上の「docId が誤っている」ときの `*_NOT_FOUND` とは原因が違う。
 
-**投入が必要なのか、docId が誤っているのかは `next_actions` で見分ける。** `action` が `cli_bulk_download` なら投入が必要。`action` が検索ツール (`nta_search_*`) で `available_doc_ids` が付いていれば、投入は済んでいて docId が誤っているだけなので、投入を案内しない。
+**投入が必要なのか、docId が誤っているのかは `next_actions` で見分ける。** `action` が `cli_bulk_download` なら投入が必要。`action` が検索ツール (`nta_search_*`) で `available_doc_ids` が付いていれば、投入は済んでいて docId が誤っているだけなので、投入を案内しない。`cli_bulk_download` が無く `available_doc_ids` も付かないときは、`hint` の先頭で DB の状態を見分ける（下の表）。
 
 | 項目               | 内容                                                                                                   |
 | ------------------ | ------------------------------------------------------------------------------------------------------ |
@@ -79,7 +79,7 @@ houki-nta-mcp の検索ツール (`nta_search_qa` / `nta_search_tax_answer` / `n
 | ユーザーに見せるか | 見せる (ユーザーの環境で投入が必要なため)                                                             |
 | メッセージ整形例   | 「質疑応答事例がローカル DB に入っていないため、検索できませんでした。`npx -y @shuji-bonji/houki-nta-mcp@latest --bulk-download-qa` で投入してください (DB: ~/.cache/houki-nta-mcp/cache.db)」 |
 
-houki-nta-mcp v0.24.0 以上では、ローカル DB の版がこの houki-nta-mcp で使えないときも、読むだけのツール（検索ツールと、改正通達・事務運営指針・文書回答事例の取得、`nta_inspect_pdf_meta`）は同じ code を返し、`hint` だけを DB の状態の文にする。houki-nta-mcp v0.25.0 以上では、`hint` の先頭の文で DB の状態が分かる（SPEC-NTA-DB-SCHEMA-029・021）。どの文も MCP サーバーが開こうとした DB のパス（ホームディレクトリの部分は `~`）を含む。文の中のコマンドは `next_actions[].example.command` と同じ `npx -y @shuji-bonji/houki-nta-mcp@latest <フラグ>` の形で、DB の場所を環境変数で決めて起動したときは `HOUKI_NTA_DB_PATH="$HOME/…" npx -y …` のように同じ変数が前に付く。
+houki-nta-mcp v0.24.0 以上では、ローカル DB の版がこの houki-nta-mcp で使えないときも、読むだけのツール（検索ツールと、改正通達・事務運営指針・文書回答事例の取得、`nta_inspect_pdf_meta`）は同じ code を返し、`hint` だけを DB の状態の文にする。houki-nta-mcp v0.25.0 以上では、`hint` の先頭の文で DB の状態が分かる（SPEC-NTA-DB-SCHEMA-029・021）。どの文も MCP サーバーが開こうとした DB のパス（ホームディレクトリの部分は `~`）を含む。文の中のコマンドは `next_actions[].example.command` と同じ `npx -y @shuji-bonji/houki-nta-mcp@latest <フラグ>` の形で、DB の場所を環境変数で決めて起動したときは `HOUKI_NTA_DB_PATH="$HOME/…" npx -y …` のように同じ変数が前に付く。houki-nta-mcp v0.26.0 以上では、DB を開けないとき（SQLite でないファイル、フォルダー、パスの途中が普通のファイル、DB のファイルを読む権限が無い）も同じ code を返し、表の最後の行の `hint` にする（SPEC-NTA-DB-SCHEMA-029、SPEC-NTA-COMMON-ERRORS-006）。v0.25.x 以前は同じ場面が `INTERNAL_ERROR` だった（下の「`INTERNAL_ERROR` / `UNKNOWN_TOOL`」）。
 
 | `hint` の先頭（v0.25.0 以上） | DB の状態 | `next_actions` | ユーザーに伝えること |
 | --- | --- | --- | --- |
@@ -90,8 +90,11 @@ houki-nta-mcp v0.24.0 以上では、ローカル DB の版がこの houki-nta-m
 | `ローカル DB（<パス>）の版 (<DB の版>) は古く移行できないため` | 版 1・2 | 投入の案内（`cli_bulk_download`） | 投入のフラグ（`npx -y @shuji-bonji/houki-nta-mcp@latest --quickstart` など）を実行すると作り直されること。取り込んだ中身は消える |
 | `ローカル DB（<パス>）の版 (<DB の版>) がこの houki-nta-mcp の版 (12) より新しいため` | 版 13 以上 | 投入の案内は無い | houki-nta-mcp を新しい版に更新すること。投入のフラグを実行しても終了コード 1 で止まる |
 | `ローカル DB（<パス>）の版を読めないため` | 版の値が整数として読めない | 投入の案内は無い | DB ファイルを消してから投入のフラグを実行すること |
+| `ローカル DB（<パス>）を開けません`（v0.26.0 以上） | 開けない（SQLite でないファイル、フォルダー、パスの途中が普通のファイル、DB のファイルを読む権限が無い）。開けない理由の文は `detail.cause` に入る（ホームディレクトリの部分は `~`）。`retryable: false` | 投入の案内は無い（ほかの案内も無ければ `next_actions` 自体が付かない） | パスがフォルダーを指していないか、途中に普通のファイルが無いか、読む権限があるか、SQLite の DB のファイルかを確かめて直すこと（`HOUKI_NTA_DB_PATH` を設定しているときはその値を直す）。`hint` の `--status` のコマンドを実行すると、開けない理由が出ること。投入のフラグも同じ DB では `[ERROR] DB を開けません` で止まるので、投入は案内しない |
 
 `nta_search_tsutatsu` で通達が 1 件も無いときと、`nta_inspect_pdf_meta` で DB はあるがその種別が無いときの `hint` は、4 行目と違う文になる（SPEC-NTA-SEARCH-TSUTATSU-003、SPEC-NTA-INSPECT-PDF-META-001）。版 3〜11 の DB は、読むだけのツールが開いたときに行を保ったまま版 12 に移行してから引くので、この表のどれにも当たらない。
+
+書き戻す 3 ツール（`nta_get_tsutatsu` / `nta_get_qa` / `nta_get_tax_answer`）は、houki-nta-mcp v0.26.0 以上では DB を開けないときもエラーにせず、DB を使わずに国税庁サイトから取って返す（`source: "live"`。SPEC-NTA-DB-SCHEMA-030）。DB には書かないので、同じ文書でも呼ぶたびに国税庁サイトから取り直す。DB を開けないことは MCP サーバーのログの `warn` の行に出るだけで、応答は DB を使えるときに国税庁サイトから取ったときと同じになる。国税庁サイトに取りに行く先の無い通達（SPEC-NTA-GET-TSUTATSU-007）だけは、表の最後の行と同じ `TSUTATSU_NOT_FOUND` になる。国税庁サイトとの通信の失敗などは DB を使えるときと同じ code で、`next_actions` に `cli_bulk_download` は入らない。v0.25.x 以前は、DB を開けないと国税庁サイトに取りに行かずに `INTERNAL_ERROR` を返した。
 
 houki-nta-mcp v0.24.x では、`hint` の先頭はどの場面でも `MCP サーバーが開いている DB（<絶対パス>）に…が入っていません`（`nta_search_tsutatsu` は `初回は …` でパスなし）、版の合わない DB では `MCP サーバーが開いている DB（<絶対パス>）の版 …` で、ファイルが無いのか空なのかを区別しない。コマンドは `houki-nta-mcp --<フラグ>` の形で、グローバルにインストールしていないと動かないので、ユーザーには `npx -y @shuji-bonji/houki-nta-mcp@latest --<フラグ>` に読み替えて伝える。
 
@@ -134,6 +137,7 @@ DB を引けた応答（`source: "bulk"`）では、`freshness.db_path` に引�
 - 3 行目 `  DB の場所の設定: <名前>`: DB の場所を決めた設定。`既定` / `XDG_CACHE_HOME` / `HOUKI_EGOV_DB_PATH`（houki-nta-mcp は `HOUKI_NTA_DB_PATH`、CLI に付けたときは `--db-path`）
 - `[WARN] 同じフォルダーに、この DB のほかに laws*.db のファイルがあります: …`（houki-nta-mcp は `cache*.db`）: 同じフォルダーに別の DB ファイルがある。応答のパスと比べ、MCP サーバーと CLI がどちらのファイルを開いているかを確かめる
 - その後の行: 件数（houki-nta-mcp は通達と 5 種別ごとの件数・取得日時の範囲）、または `  (DB がまだありません — …)` の行
+- houki-nta-mcp で DB を開けないときは、件数の行を出さず、標準エラー出力に `[ERROR] DB を開けません: <文>` を出して終了コード 1 で終わる（SPEC-NTA-CLI-STATUS-007）。`<文>` は、v0.26.0 以上の読むだけのツールの応答の `detail.cause` と同じ文（応答ではホームディレクトリの部分が `~`）
 
 MCP サーバーの起動時のログ（標準エラー出力）にも、開く DB の絶対パスと設定の名前を書いた `DB: <絶対パス>（DB の場所の設定: <名前>）` の行が出る（houki-egov-mcp v0.20.0・houki-nta-mcp v0.25.0 以上）。
 
@@ -212,6 +216,8 @@ houki-egov-mcp は 429 をサーバーの中で取り直してからこの code 
 | ユーザーに見せるか | `INTERNAL_ERROR` は代替手段で答えられなかったとき。`UNKNOWN_TOOL` は見せない                               |
 
 例外として、ローカル DB の日付を読めないときの `INTERNAL_ERROR` は MCP のバグではない。houki-nta-mcp（v0.22.0 以上）は DB の取得時点（`fetched_at`）を、houki-egov-mcp（v0.16.0 以上）は同期の記録の日付（`sync_state.last_sync_date`）を読めないとき、`INTERNAL_ERROR`・`retryable: false` を返し、取り込みのやり直しを案内する。案内は、houki-nta-mcp では `next_actions` の `cli_bulk_download`（`example.command` にその種別の投入コマンド）、houki-egov-mcp では `hint`（v0.20.0 以上は `npx -y @shuji-bonji/houki-egov-mcp@latest --bulk-download-everything`、v0.19.x 以前は `houki-egov-mcp --bulk-download-everything`）にある。このときは不具合として報告せず、案内のコマンドをユーザーに伝える。`error` が `取得時点を読めません:` / `同期の記録の日付を読めません:` で始まるかで見分けられる。
+
+もう 1 つの例外として、houki-nta-mcp v0.25.x 以前では、ローカル DB を開けないとき（SQLite でないファイル、フォルダー、パスの途中が普通のファイル、DB のファイルを読む権限が無い）も、DB を開くツールが `INTERNAL_ERROR`（`retryable: false`、`hint` は `バグの可能性があります。再現手順を添えて GitHub issue でご報告ください`）を返す。`detail.cause` が `file is not a database`・`unable to open database file`・`ENOTDIR: not a directory, mkdir '…'` のように DB を開くときの文なら、MCP の不具合ではなく DB のファイルの問題なので、報告は勧めない。`HOUKI_NTA_DB_PATH` などで指したパスがフォルダーを指していないか、途中に普通のファイルが無いか、読む権限があるか、SQLite の DB のファイルかを確かめるようユーザーに伝える（v0.25.x では `npx -y @shuji-bonji/houki-nta-mcp@latest --status` で開けない理由も出る）。v0.26.0 以上では、同じ場面は `INTERNAL_ERROR` にならず、読むだけのツールは `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND`（上の「`next_actions` が `cli_bulk_download` の `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND`」の表の最後の行）、書き戻す 3 ツールは国税庁サイトから取った応答になる（SPEC-NTA-COMMON-ERRORS-006）。DB を開けた後の SQL の失敗（`database disk image is malformed` など）は、v0.26.0 以上でも `INTERNAL_ERROR` のままで、この例外に当たらない。
 
 ## メッセージ整形 — 共通テンプレート
 

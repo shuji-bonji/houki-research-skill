@@ -75,8 +75,8 @@ flowchart LR
 | `RANGE_NOT_FOUND` | 求めた編・章・節、または附則の番号が無い | ○ | | |
 | `ATTACHMENT_NOT_FOUND` | 求めた添付ファイルが無い | ○ | | |
 | `ABBREVIATION_NOT_FOUND` | 略称辞書に無い名前を指定した | | ○ | |
-| `TSUTATSU_NOT_FOUND` | 求めた通達が、ローカル DB に無く国税庁サイトから取る先も無い | | ○ | |
-| `DOC_NOT_FOUND` | 求めた文書がローカル DB に無い、または国税庁サイトにそのページが無い（`nta_get_qa` / `nta_get_tax_answer` の 404）か、`nta_get_tax_answer` で国税庁の索引にその番号が無い（houki-nta-mcp）／ PDF が見つからない（pdf-reader-mcp） | | ○ | ○ |
+| `TSUTATSU_NOT_FOUND` | 求めた通達が、ローカル DB に無く国税庁サイトから取る先も無い。ローカル DB を開けないときも（houki-nta-mcp v0.26.0 以上。`nta_search_tsutatsu` と、国税庁サイトから取る先の無い通達の `nta_get_tsutatsu`） | | ○ | |
+| `DOC_NOT_FOUND` | 求めた文書がローカル DB に無い（ローカル DB を開けないときも。houki-nta-mcp v0.26.0 以上の読むだけのツール）、または国税庁サイトにそのページが無い（`nta_get_qa` / `nta_get_tax_answer` の 404）か、`nta_get_tax_answer` で国税庁の索引にその番号が無い（houki-nta-mcp）／ PDF が見つからない（pdf-reader-mcp） | | ○ | ○ |
 
 ### 取得元（e-Gov・国税庁・PDF の URL）からの取得の失敗
 
