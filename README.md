@@ -148,28 +148,28 @@ v0.7.0 から `houki-egov-mcp` と `houki-nta-mcp` を `dependencies` に宣言�
 
 ## 前提となる MCP 群
 
-このスキルは `houki-egov-mcp` と `houki-nta-mcp` が Claude に登録済みであることを前提とします。marketplace 経由で install した場合、この 2 つは v0.7.0 から自動で入ります。`pdf-reader-mcp` は添付 PDF を表として取るときに使いますが、必須ではありません — 無ければ `nta_inspect_pdf_meta` が返すファイルのパス（`saved[].path`）か URL と読み方（`layout_note`）を、使っている PDF 読み取りツールに渡します（v0.13.0）。
+この節は、Skill を使う前に Claude に登録しておく MCP と、その版を確かめるためのものです。
 
-| MCP / パッケージ                   | 推奨最小バージョン                                 | npm                                                                   | リポジトリ                                                   |
-| ---------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `@shuji-bonji/houki-egov-mcp`      | v0.5.3 以上 (`search_fulltext` と `INVALID_ARGUMENT` の `detail.issues` を使うため。枝番号の号 (`item: "12の8"`) は v0.6.0 以上。feasibility-check の ⑤ で委任先を `get_related_laws` / `get_article_references` で辿るのは v0.10.1 以上で、それより前は `law_type` 指定の `search_law` に切り替わる。鉄則 4 の引用の実在確認 (`verify_citations`) は v0.11.0 以上で、それより前はこの手を飛ばす。feasibility-check の ⑤ で別表・様式の図を `list_attachments` で取るのは v0.15.0 以上で、それより前は e-Gov のサイトで図を見る。`save: true` の上限超えの `FILE_TOO_LARGE`、検索の通信の失敗を `LAW_NOT_FOUND` でなく `SOURCE_*` で返すこと、`search_law` の管轄外の略称の `OUT_OF_SCOPE` は v0.16.0 以上。`get_law_revisions` が施行日の新しい順に並ぶこと、`meta.at` などの値の無いキーが `null` で付くこと、`INTERNAL_ERROR` / `UNKNOWN_TOOL` が `retryable: false` になることは v0.17.0 以上。法令名の完全一致が無いときの候補付きの `LAW_NOT_FOUND`、時点 `at` が 2017-04-01 より前のときの `INVALID_ARGUMENT`、`get_article_references` の `kind: "suppl"`、`get_law` / `verify_citations` の `suppl_index`、`search_fulltext` の管轄外の略称の `OUT_OF_SCOPE` は v0.18.0 以上で、v0.18.0 以上では `search_law` / `search_fulltext` に `domain` を渡さない。`search_fulltext` が版の合わない DB を使わずに `search_law` に切り替えることは v0.19.0 以上で、v0.18.x 以前に作った DB は v0.19.0 以上の `--bulk-download-everything` で作り直す。`search_fulltext` の `api-fallback` の `note` の先頭に DB のパスが入り DB の状態ごとに文が分かれること、`freshness.db_path`、案内のコマンドの `npx -y @shuji-bonji/houki-egov-mcp@latest` の形、`--status` の「DB の場所の設定」の行と同じフォルダーの別の DB の `[WARN]` は v0.20.0 以上。v0.2.0 以上なら動作はする) | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-egov-mcp)      | [GitHub](https://github.com/shuji-bonji/houki-egov-mcp)      |
-| `@shuji-bonji/houki-nta-mcp`       | v0.12.0 以上 (質疑応答事例の `related_laws` と `next_actions` で法律本文と通達へ戻る手順を使うため。検索の `DOC_NOT_FOUND` は v0.13.0 以上、枝番号の号の `item` は v0.14.0 以上、取得ツールの docId 誤りと DB 未投入の切り分けは v0.14.1 以上、取得ツールの `source` は v0.16.0 以上、索引から消えた文書の `index_status` は v0.17.0 以上、添付 PDF の `read_strategy` / `layout_note` / `save: true` / `next_actions` は v0.19.0 以上で、それより前は `reader_hints.examples` の `url` を `read_url` に渡す。改正通達の「別紙 N」が `comparison` で返るのは v0.20.0 以上で、v0.19.x は `kind` を付けずに全件を見る。改正通達・事務運営指針の取得で docId が無いときの `DOC_NOT_FOUND` と、`nta_get_qa` / `nta_get_tax_answer` でページが無いときの `DOC_NOT_FOUND` は v0.22.0 以上で、それより前はそれぞれ `TSUTATSU_NOT_FOUND`・`SOURCE_API_ERROR`。索引にある文書の `index_status: null` などの値の無いキーが `null` で付くこと、タックスアンサーの `basisDate`、`INTERNAL_ERROR` / `UNKNOWN_TOOL` の `retryable: false` は v0.23.0 以上。国税庁サイトとの通信の失敗を `SOURCE_TIMEOUT` / `SOURCE_RATE_LIMITED` / `SOURCE_UNAVAILABLE` / `SOURCE_API_ERROR` に分けること、403・400 の `SOURCE_API_ERROR` の `retryable: false`、`nta_get_tax_answer` の 8xxx 帯（災害関係）、事務運営指針の `legal_status.note` の文は v0.24.0 以上で、v0.24.0 以上では `nta_search_qa` に `domain` を渡さない。検索の `freshness` が国税庁の索引から消えた文書を範囲に入れないことは v0.24.1 以上。「DB に 1 件も無い」ときの `hint` の先頭に DB のパスが入り DB の状態ごとに文が分かれること、検索 6 ツールの `freshness.db_path`（`freshness` は常に付く）、案内のコマンドの `npx -y @shuji-bonji/houki-nta-mcp@latest` の形、CLI の `--status` は v0.25.0 以上。ローカル DB を開けないときに読むだけのツールが `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND`（`hint` が `ローカル DB（<パス>）を開けません` で始まる。v0.25.x 以前は `INTERNAL_ERROR`）を返すこと、同じときに書き戻す 3 ツール（`nta_get_tsutatsu` / `nta_get_qa` / `nta_get_tax_answer`）が DB を使わずに国税庁サイトから取って返し、MCP サーバーのログに `warn` を出すこと、`--bulk-download-tax-answer` がタックスアンサーの索引を DB に保存できなくても記事の取り込みを続け、`[WARN]` の行を出すことは v0.26.0 以上。置き場所のフォルダー（またはパスの途中のフォルダー）に入る権限が無いローカル DB を「開けない」と判定すること（`--status` が `[ERROR] DB を開けません: EACCES: パスの途中のフォルダーに入る権限がありません (<フォルダー>)` で終了コード 1、読むだけのツールが `ローカル DB（<パス>）を開けません` の `hint`。v0.26.x 以前は「DB がまだありません」で終了コード 0、読むだけのツールは投入の案内）と、`nta_get_tsutatsu` で基本通達 4 種以外の通達（`電帳法取通` など）に投入のコマンドを案内せず、`hint` で今は取り込めないことを返すこと（v0.26.x 以前の案内のコマンドは終了コード 2 で止まる）は v0.27.0 以上。v0.11.0 以上なら通達の手順は動き、v0.7.0 以上なら動作はする) | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-nta-mcp)       | [GitHub](https://github.com/shuji-bonji/houki-nta-mcp)       |
-| `@shuji-bonji/pdf-reader-mcp`      | v0.4.0 以上 (任意。無ければ手元の PDF 読み取りツールで代わりになる) | [npm](https://www.npmjs.com/package/@shuji-bonji/pdf-reader-mcp)      | [GitHub](https://github.com/shuji-bonji/pdf-reader-mcp)      |
-| `@shuji-bonji/houki-abbreviations` | v0.3.0 以上 (各 MCP に内蔵)                        | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-abbreviations) | [GitHub](https://github.com/shuji-bonji/houki-abbreviations) |
+| MCP / パッケージ                   | 要否 | 推奨バージョン | 動作する最低バージョン | リンク |
+| ---------------------------------- | ---- | -------------- | ---------------------- | ------ |
+| `@shuji-bonji/houki-egov-mcp`      | 必須 | v0.20.0 以上   | v0.2.0                 | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-egov-mcp) · [GitHub](https://github.com/shuji-bonji/houki-egov-mcp) |
+| `@shuji-bonji/houki-nta-mcp`       | 必須 | v0.27.0 以上   | v0.7.0（通達の手順は v0.11.0） | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-nta-mcp) · [GitHub](https://github.com/shuji-bonji/houki-nta-mcp) |
+| `@shuji-bonji/pdf-reader-mcp`      | 任意 | v0.15.5 以上   | v0.4.0                 | [npm](https://www.npmjs.com/package/@shuji-bonji/pdf-reader-mcp) · [GitHub](https://github.com/shuji-bonji/pdf-reader-mcp) |
+| `@shuji-bonji/houki-abbreviations` | 各 MCP に内蔵 | — | v0.3.0           | [npm](https://www.npmjs.com/package/@shuji-bonji/houki-abbreviations) · [GitHub](https://github.com/shuji-bonji/houki-abbreviations) |
 
-> [!NOTE]
-> 推奨最小バージョンは、エラーの `code`（`OUT_OF_SCOPE` など）と PDF 抽出の手順が Skill の記述と合うための目安です。それ以前のバージョンでも skill 自体は動作しますが、エラーフォールバック例 (`examples/error-recovery-patterns.md`) の挙動が一致しない可能性があります。
+- 推奨バージョンは、Skill の文書と突き合わせた版です（`scripts/mcp-refs.config.json`）。この版以上なら、ツール名・引数名・エラーの `code` と手順が文書のとおりに動きます
+- 推奨より古い版でも Skill は動きますが、手順の一部が使えないか、エラーの `code` や応答の文が文書と違います。版ごとの違いは [`docs/NOTES.md`](docs/NOTES.md) にあります
+- marketplace 経由で install した場合、houki-egov-mcp と houki-nta-mcp は v0.7.0 から自動で入ります
+- `pdf-reader-mcp` は、添付 PDF を表として取るときに使います。無ければ、`nta_inspect_pdf_meta` が返すファイルのパス（`saved[].path`）か URL と、読み方（`layout_note`）を、使っている PDF 読み取りツールに渡します（v0.13.0）
 
-> [!IMPORTANT]
-> houki-egov-mcp v0.19.0 と houki-nta-mcp v0.24.0 で、ローカル DB の版が上がりました。
->
-> - **houki-egov-mcp v0.19.0（DB の版 3）**: v0.18.x 以前に作った DB は使えません。`npx -y @shuji-bonji/houki-egov-mcp@latest --bulk-download-everything`（全件の zip 約 290 MB）で作り直してください。作り直すまで、`search_fulltext` は条文本文を探さずに `search_law` に切り替えます。作り直した DB を v0.18.x 以前で開くと全テーブルが消えるので、作り直した後は CLI と MCP サーバー（plugin）の版を v0.19.0 以上にそろえてください
-> - **houki-nta-mcp v0.24.0（DB の版 12）**: v0.23.x 以前で作った DB は、v0.24.0 の CLI かツールが最初に開いたときに行を保ったまま移行されます。取り込み直しは要りません。移行した DB を v0.23.x 以前で開くと全テーブルが消えて作り直されるので、v0.23.x 以前に戻すときは `HOUKI_NTA_DB_PATH` で別の DB ファイルを指してください
+### ローカル DB
 
-> [!NOTE]
-> houki-egov-mcp v0.20.0 と houki-nta-mcp v0.25.0 から、応答と CLI が案内するコマンドは `npx -y @shuji-bonji/<パッケージ>@latest <フラグ>` の形です（環境変数で DB の場所を決めて起動したときは、同じ変数が前に付きます）。この README と Skill の文書でフラグだけを書いているところ（`--bulk-download-everything` など）も、この形で実行してください。
->
-> 投入したはずなのに `search_fulltext` が `api-fallback` になる、または houki-nta-mcp が「DB に入っていません」と返すときは、MCP サーバーと CLI が別の DB ファイルを開いている可能性があります。投入したシェルで `npx -y @shuji-bonji/houki-egov-mcp@latest --status` / `npx -y @shuji-bonji/houki-nta-mcp@latest --status` を実行し、表示される DB のパスを応答の `note` / `hint` のパスと比べてください。手順は [`docs/ERROR-HANDLING.md`](skills/houki-research/docs/ERROR-HANDLING.md) の「MCP サーバーが開いている DB を確かめる」にあります。
+両 MCP の全文検索と国税庁の文書の検索は、ローカル DB を引きます。版を上げるときと、DB が見つからないときに確かめることです。
+
+- houki-egov-mcp を v0.18.x 以前から v0.19.0 以上に上げたら、`npx -y @shuji-bonji/houki-egov-mcp@latest --bulk-download-everything` で DB を作り直してください。作り直した DB を v0.18.x 以前で開くと全テーブルが消えます（[詳細](docs/NOTES.md#houki-egov-mcp)）
+- houki-nta-mcp を v0.23.x 以前から v0.24.0 以上に上げたときは、DB は最初に開いたときに移行されます。取り込み直しは要りません。v0.23.x 以前に戻すときは、`HOUKI_NTA_DB_PATH` で別の DB ファイルを指してください（[詳細](docs/NOTES.md#houki-nta-mcp)）
+- 案内のコマンドは `npx -y @shuji-bonji/<パッケージ>@latest <フラグ>` の形です（houki-egov-mcp v0.20.0・houki-nta-mcp v0.25.0 以上）。この README と Skill の文書でフラグだけを書いているところ（`--bulk-download-everything` など）も、この形で実行してください
+- 投入したはずなのに「DB に入っていません」と返るときは、投入したシェルで `--status` を実行し、表示される DB のパスを応答の `note` / `hint` のパスと比べてください。手順は [`docs/ERROR-HANDLING.md`](skills/houki-research/docs/ERROR-HANDLING.md) の「MCP サーバーが開いている DB を確かめる」にあります
 
 セットアップの詳細は [houki-nta-mcp の HOUKI-FAMILY-INTEGRATION.md](https://github.com/shuji-bonji/houki-nta-mcp/blob/main/docs/HOUKI-FAMILY-INTEGRATION.md) を参照。
 
@@ -199,6 +199,8 @@ houki-research-skill/
 │   ├── update-mcp-snapshots.mjs    # MCP の tools/list と code の正本から mcp-snapshots/ を作る
 │   └── check-mcp-refs.mjs          # 文書のツール名・引数名・code を mcp-snapshots/ と突き合わせる
 ├── mcp-snapshots/                  # update-mcp-snapshots.mjs の出力 (自動生成)
+├── docs/
+│   └── NOTES.md                    # 前提となる MCP の版ごとの違い (人間向け)
 ├── README.md                       # このファイル (人間向け概要)
 └── LICENSE                         # MIT
 ```
