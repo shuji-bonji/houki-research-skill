@@ -13,7 +13,7 @@
       "name": "houki-nta",
       "column": "houki-nta-mcp",
       "npm": "@shuji-bonji/houki-nta-mcp",
-      "version": "0.26.0",
+      "version": "0.27.0",
       "repo": "shuji-bonji/houki-nta-mcp",
       "errorCodes": { "spec": "specs/current/common_errors/spec.md" }
     },
