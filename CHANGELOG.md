@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.19.1] - 2026-10-09
+
+**patch リリース** — houki-nta-mcp 0.26.0（2026-10-07 publish。#144・#145）に追随します。ローカル DB を開けないときの応答の表と説明を直しただけで、呼び出しの手順は足していないので、patch にしました。
+
+### Changed
+
+- **`scripts/mcp-refs.config.json` の版**: houki-nta-mcp 0.25.0 → 0.26.0。`mcp-snapshots/houki-nta.json` を作り直しましたが、ツール名・引数名・code の一覧は変わらず、版と `errorCodesSource` のタグだけが変わりました（ツール 14、code 12）
+- **`docs/ERROR-HANDLING.md` の `cli_bulk_download` の `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND`**: `hint` の先頭の表に `ローカル DB（<パス>）を開けません`（v0.26.0 以上）の行を足しました。`next_actions` は無く、`retryable: false`、開けない理由は `detail.cause` で、パス・権限・ファイルを確かめて直し、`--status` で理由を見ることを伝えます（SPEC-NTA-DB-SCHEMA-029、SPEC-NTA-COMMON-ERRORS-006）。「いずれも `next_actions` の `action` が `cli_bulk_download`」は、投入で直る場面に限る文にし、`cli_bulk_download` も `available_doc_ids` も無いときは `hint` の先頭で見分けることを足しました。書き戻す 3 ツール（`nta_get_tsutatsu` / `nta_get_qa` / `nta_get_tax_answer`）が DB を開けないときも国税庁サイトから取って返し、DB に書かないこと（SPEC-NTA-DB-SCHEMA-030）も書きました
+- **`docs/ERROR-HANDLING.md` の `INTERNAL_ERROR` / `UNKNOWN_TOOL`**: 例外に、houki-nta-mcp v0.25.x 以前では DB を開けないときも `INTERNAL_ERROR`（`detail.cause` が `file is not a database` など）で、不具合ではないので報告を勧めないことを足しました。v0.26.0 以上では同じ場面が `INTERNAL_ERROR` にならないこと、DB を開けた後の SQL の失敗は今までどおり `INTERNAL_ERROR` であることも書きました
+- **`docs/ERROR-HANDLING.md` の「MCP サーバーが開いている DB を確かめる（`--status`）」**: houki-nta-mcp で DB を開けないとき、`--status` が `[ERROR] DB を開けません: <文>` を出して終了コード 1 で終わり、その文が応答の `detail.cause` と同じであることを足しました（SPEC-NTA-CLI-STATUS-007）
+- **`docs/ERROR-CODES.md` の `TSUTATSU_NOT_FOUND`・`DOC_NOT_FOUND`**: ローカル DB を開けないときも返すこと（houki-nta-mcp v0.26.0 以上）を足しました
+- **`SKILL.md` の鉄則 5 の表**: `hint` が `ローカル DB（<パス>）を開けません` で始まる `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND` の行を足しました。「該当なし」と答えず、投入も案内せず、`hint` の内容をユーザーに伝えます。`docs/ERROR-HANDLING.md` の表の行と同じ扱いを、鉄則 5 から引けるようにしたものです
+- **README の推奨最小バージョンの表**: houki-nta-mcp に v0.26.0 の 3 つの変更（開けない DB の `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND`、書き戻す 3 ツールの国税庁サイトからの取得と `warn`、`--bulk-download-tax-answer` の `[WARN]`）を足しました
+
+### 確かめたこと
+
+- 2026-10-09 JST に `開けな` / `INTERNAL_ERROR` / `cli_bulk_download` / `bulk-download-tax-answer` / `索引` で grep し直しました（CHANGELOG を除く）。`examples/error-recovery-patterns.md` のシナリオ 2 の「DB に 1 件も入っていない場合」は、DB を開ける場面の文なので、そのままにしました。`docs/ERROR-CODES.md` の `INTERNAL_ERROR` の行と `docs/ERROR-HANDLING.md` の基本フローの図は、MCP を分けない一般の説明なので変えていません。`SKILL.md`・`workflows/`・`docs/ARCHITECTURE.md` の `開けない` は houki-egov-mcp の `search_fulltext` の話で、`索引` は国税庁の索引から消えた文書の話なので、0.26.0 では古くなっていません。`--bulk-download-tax-answer` を書いた箇所は Skill にありませんでした
+- `node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 256 か所、code 176 か所）。`node --test 'scripts/test/*.test.mjs'` は 19 件とも通りました。`node scripts/update-mcp-snapshots.mjs --check` も 3 つとも一致しました
+
 ## [0.19.0] - 2026-10-05
 
 **minor リリース** — houki-egov-mcp 0.19.1・0.20.0 / houki-nta-mcp 0.24.1・0.25.0 に追随します。4 つの版とも 2026-10-04〜05 に publish されました。文の言い換えだけでなく、「DB が見つからない」ときに `--status` で DB の場所を確かめる手順を足したので、minor にしました。
