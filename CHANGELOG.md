@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.20.0] - 2026-10-09
+
+**minor リリース** — houki-nta-mcp 0.27.0（2026-10-09 publish。#154・#155）に追随します。表と説明を直すだけでなく、`SKILL.md` の鉄則 5 の表に、取り込めない通達の `TSUTATSU_NOT_FOUND` で投入を勧めずに通達なしで部分回答する行を足し、LLM の動きを変えるので、minor にしました。
+
+### Changed
+
+- **`scripts/mcp-refs.config.json` の版**: houki-nta-mcp 0.26.0 → 0.27.0。`mcp-snapshots/houki-nta.json` を作り直しましたが、ツール名・引数名・code の一覧は変わらず、版と `errorCodesSource` のタグだけが変わりました（ツール 14、code 12）
+- **`docs/ERROR-HANDLING.md` の `cli_bulk_download` の `DOC_NOT_FOUND` / `TSUTATSU_NOT_FOUND`**: `hint` の先頭の表の `ローカル DB（<パス>）を開けません` の行の開けない場面に、置き場所のフォルダー（またはパスの途中のフォルダー）に入る権限が無いとき（v0.27.0 以上）を足しました。このときの `detail.cause` は `EACCES: パスの途中のフォルダーに入る権限がありません (<フォルダー>)` で、括弧の中のフォルダーの権限を直すか、`HOUKI_NTA_DB_PATH` で入れるフォルダーの DB を指すことを伝えます（SPEC-NTA-DB-SCHEMA-021・029）。表の前の段落に、v0.26.x 以前は同じ場面でファイルが無いときの `hint` と `cli_bulk_download` を返し、案内どおりに投入しても `[ERROR] DB を開けません` で止まることを書きました
+- **`docs/ERROR-HANDLING.md` の書き戻す 3 ツールの段落**: 国税庁サイトに取りに行く先の無い通達（SPEC-NTA-GET-TSUTATSU-007）は、v0.26.x では DB を開けないときに表の最後の行の応答になり、v0.27.0 以上では DB を開けるときと同じ「今は取り込めない」応答（`retryable` と `detail` は付かない）になることに直しました（SPEC-NTA-DB-SCHEMA-030）
+- **`docs/ERROR-HANDLING.md` の「MCP サーバーが開いている DB を確かめる（`--status`）」**: houki-nta-mcp v0.27.0 以上では、置き場所のフォルダーに入る権限が無いときも `[ERROR] DB を開けません: EACCES: …` で終了コード 1 になること、v0.26.x 以前は同じ場面で `  (DB がまだありません — …)` を出して終了コード 0 で終わり、投入しても直らないことを足しました（SPEC-NTA-CLI-STATUS-004・007）
+- **`workflows/feasibility-check.md` の ⑤'**: 基本通達 4 種以外の通達を `nta_get_tsutatsu` で求めたときの `TSUTATSU_NOT_FOUND` の `hint`（v0.27.0 以上）と、v0.26.x 以前の案内のコマンドを実行させないことを足しました
+- **README の推奨最小バージョンの表**: houki-nta-mcp に v0.27.0 の 2 つの変更（入る権限の無いフォルダーの DB を「開けない」と判定すること、4 種以外の通達に投入を案内しないこと）を足しました
+
+### Added
+
+- **`SKILL.md` の鉄則 5 の表**: `TSUTATSU_NOT_FOUND` で `hint` が `この通達（<正式名>）は、今は取り込めません` で始まるときの行を足しました。基本通達 4 種以外の通達は houki-nta-mcp では取れないので、フォールバックも投入の案内もせず、通達なしで法律本文と国税庁サイトの案内までで部分回答します（SPEC-NTA-GET-TSUTATSU-007）。v0.26.x 以前は同じ場面で `cli_bulk_download`（`--bulk-download --tsutatsu=…`）が付きますが、実行すると終了コード 2 で止まる（SPEC-NTA-CLI-BULK-DOWNLOAD-011）ので実行させず、`error` が `ライブ取得用 URL も未登録です` で終わることで見分けます。`cli_bulk_download` の行にも、この場面を除くことを書きました
+- **`docs/ERROR-HANDLING.md` の `LAW_NOT_FOUND` / `ARTICLE_NOT_FOUND` / `TSUTATSU_NOT_FOUND` / `DOC_NOT_FOUND` の節**: 上の行の詳しい説明として、版ごとの `hint`・`next_actions`・見分け方の表を足しました。`cli_bulk_download` の節の見分けの段落にも、v0.26.x 以前のこの場面は投入で直らないことを足しました
+
+### 確かめたこと
+
+- 2026-10-09 JST に `開けな` / `EACCES` / `TSUTATSU_NOT_FOUND` / `--tsutatsu` / `電帳法` で grep し直しました（CHANGELOG を除く）。houki-nta-mcp の proposal.md の表に無かった古い文として、`docs/ERROR-HANDLING.md` の書き戻す 3 ツールの段落の 007 の文を直しました。`docs/ERROR-HANDLING.md` の「`next_actions` が `cli_bulk_download` の …」の節の冒頭の説明と `docs/ERROR-CODES.md` の `TSUTATSU_NOT_FOUND` の行は、proposal.md のとおり 0.27.0 でも古くならない（code は同じ）ので、そのままにしました。`docs/ERROR-HANDLING.md` の `INTERNAL_ERROR` の例外の段落は v0.25.x 以前の場面の列挙なので、入る権限の無いフォルダーは足していません。`SKILL.md`・`workflows/tax-research.md`・`workflows/feasibility-check.md` の `開けない` は houki-egov-mcp の `search_fulltext` の話で、`examples/electronic-bookkeeping.md` の `電帳法` は版を書いた実測の記録なので、変えていません
+- `node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 261 か所、code 188 か所）。`node --test 'scripts/test/*.test.mjs'` は 19 件とも通りました。`node scripts/update-mcp-snapshots.mjs --check` も 3 つとも一致しました
+
 ## [0.19.1] - 2026-10-09
 
 **patch リリース** — houki-nta-mcp 0.26.0（2026-10-07 publish。#144・#145）に追随します。ローカル DB を開けないときの応答の表と説明を直しただけで、呼び出しの手順は足していないので、patch にしました。
