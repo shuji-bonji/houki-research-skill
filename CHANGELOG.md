@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.21.0] - 2026-10-12
+
+**minor リリース** — `SKILL.md` 鉄則 3 に `nta_search_tsutatsu` の 0 件の応答の読み方を足し、LLM の動き（`hint` が無いことを不備と取らない、`search_notes` があれば語を変えて検索し直す）を変えるので、minor にしました（#30。houki-hub の `docs/reports/2026-10-12-integration-check.md` の Issue 候補 2）。
+
+### Added
+
+- **`SKILL.md` 鉄則 3 の「通達や質疑応答事例を先に引いたら、法律本文へ戻る」**: houki-nta-mcp の検索 6 ツールのうち `nta_search_tsutatsu` だけは結果を `hits` に入れ（文書系 5 ツールは `results`）、キーワードに合うものが無いときは `count: 0`・`hits: []` と `message`（`"<keyword>" にマッチする clause はありません`）を返して `hint`・`next_actions`・`base_laws_by_tsutatsu` が付かないこと（SPEC-NTA-SEARCH-TSUTATSU-005）を足しました。文書系 5 ツールの `results: []` と `hint` の形と並べ、どちらも「その語を含む文書は無い」という検索結果として扱い、`search_notes` が付いていれば語を変えて検索し直すことを書きました
+- **`docs/ERROR-HANDLING.md` の「`next_actions` が `cli_bulk_download` の …」の節の末尾**: 「キーワードに合わないだけの 0 件」の 1 文を、文書系 5 ツールと `nta_search_tsutatsu` の 0 件の応答を並べた表にしました。`search_notes` が付く 2 つの場面（2 文字の語の部分一致、通称の法令名への展開。SPEC-NTA-SEARCH-TSUTATSU-006・008）と、付かない場面（007）も書きました
+
+### 確かめたこと
+
+- 2026-10-12 JST に houki-nta-mcp v0.27.0（plugin 版）の `nta_search_tsutatsu` を `{ keyword: "存在しない語句ゼロ件" }` と `{ keyword: "社宅" }` で呼び、前者は `count: 0`・`hits: []`・`message` と `freshness`・`legal_status` だけ、後者はそれに `search_notes[0]`（「3 文字未満」と「0 件でも「該当なし」とは限らない」を含む）が付くことを確かめました。`hint` と `next_actions` はどちらにも付きませんでした
+- `node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 275 か所、code 188 か所）。`node --test 'scripts/test/*.test.mjs'` は 19 件とも通りました
+
 ## [0.20.1] - 2026-10-12
 
 **patch リリース** — `docs/ERROR-CODES.md` の版の数字の食い違いを直しただけで、手順も code の一覧も変えていないので、patch にしました（#31）。
