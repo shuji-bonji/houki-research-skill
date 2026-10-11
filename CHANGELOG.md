@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+## [0.21.1] - 2026-10-14
+
+### Changed
+
+- **`workflows/feasibility-check.md` のステップ ④**: `get_toc` の `depth: 2` の例の次に、`get_toc` の `truncated: true` は渡した `depth` で枝を刈った印（houki-egov-mcp v0.21.0 以上では `truncated_by: "depth"` が付く）で、続きを取る操作は無く、全階層が要るなら `depth` を省いて呼び直すこと、`get_law_range` の `range.truncated`（文字数の上限）とは意味が違うことを書きました（houki-egov-mcp #121、仕様 PR [#122](https://github.com/shuji-bonji/houki-egov-mcp/pull/122) の proposal.md「実装 PR で直す文書」4）。egov 0.21.0 の追随（`scripts/mcp-refs.config.json` と `mcp-snapshots/`）と一緒に出します
+
 ## [0.21.0] - 2026-10-12
 
 **minor リリース** — `SKILL.md` 鉄則 3 に `nta_search_tsutatsu` の 0 件の応答の読み方を足し、LLM の動き（`hint` が無いことを不備と取らない、`search_notes` があれば語を変えて検索し直す）を変えるので、minor にしました（#30。houki-hub の `docs/reports/2026-10-12-integration-check.md` の Issue 候補 2）。

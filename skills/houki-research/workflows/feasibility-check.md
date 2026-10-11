@@ -100,12 +100,14 @@ sequenceDiagram
 
 ```jsonc
 { "tool": "get_toc", "args": { "law_name": "民法", "depth": 2 } }
-// → toc[2].children[1].path = "Part3/Chapter2"（第三編 債権 第二章 契約）
+// → toc[2].children[1].path = "Part3/Chapter2"（第三編 債権 第二章 契約）。truncated: true（depth で刈った印。v0.21.0 以上では truncated_by: "depth" が付く）
 { "tool": "get_law_range", "args": { "law_name": "民法", "path": "Part3/Chapter2" } }
 // → 198 条のうち 186 条（第521条〜第684条、本文 29,911 文字）。range.truncated: true
 { "tool": "get_law_range", "args": { "law_name": "民法", "path": "Part3/Chapter2", "from_article": "685" } }
 // → 続きの 12 条。range.next_from_article の値をそのまま渡す
 ```
+
+`get_toc` の `truncated: true` は、自分が渡した `depth` で枝を刈った印で（houki-egov-mcp v0.21.0 以上では `truncated_by: "depth"` が付く）、応答の大きさで切れたのではなく、続きを取る操作も無い。全階層が要るなら `depth` を省いて呼び直す。`get_law_range` の `range.truncated` は文字数の上限で条を打ち切った印で、こちらは `next_from_article` で続きを取る。同じ名前でも意味が違うので取り違えない。
 
 使い分けの目安:
 
