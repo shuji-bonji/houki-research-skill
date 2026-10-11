@@ -130,6 +130,8 @@ sequenceDiagram
 | `nta_get_qa` (`format: "json"`) | `related_laws` / `related_tsutatsu` | 【関係法令通達】欄を分けたもの。法令は `law_name` / `article` / `paragraph` / `item`、通達は `name` / `clause`。元の文字列は `raw` |
 | 上のすべて | `next_actions` | `{ "action": "delegate_to_mcp", "example": { "mcp": "houki-egov", "tool": "get_law", … } }`。質疑応答事例では `nta_get_tsutatsu` への案内も入る。**エラーでなくても付く** |
 
+houki-nta-mcp の検索 6 ツールのうち、`nta_search_tsutatsu` だけは結果を `hits` に入れる (文書系 5 ツール `nta_search_kaisei_tsutatsu` / `nta_search_jimu_unei` / `nta_search_bunshokaitou` / `nta_search_qa` / `nta_search_tax_answer` は `results`)。キーワードに合うものが無いときの応答の形も違う。`nta_search_tsutatsu` は `count: 0`・`hits: []` と `message` (`"<keyword>" にマッチする clause はありません`) を返し、`hint`・`next_actions`・`base_laws_by_tsutatsu` は付かない (SPEC-NTA-SEARCH-TSUTATSU-005)。文書系 5 ツールは `results: []` と、検索した件数を書いた `hint` を返す。どちらもエラーではなく、「その語を含む文書は無い」という検索結果として扱う。`hint` が無いことを不備と取らない。ただし `search_notes` が付いているとき (2 文字の語を部分一致で補った、通称を法令名に広げた) は、その文のとおりに語を変えて検索し直してから「無い」と判断する ([`docs/ERROR-HANDLING.md`](docs/ERROR-HANDLING.md) の「`next_actions` が `cli_bulk_download` の …」の節の末尾)。
+
 `example` の読み方に注意する。`mcp` と `tool` は **どの MCP のどの tool を呼ぶか**を示すもので、引数ではない。houki-egov-mcp v0.6.0 以上と houki-nta-mcp v0.14.0 以上は inputSchema に無い引数を `INVALID_ARGUMENT` で返すので、`example` をそのまま渡すと `mcp, tool: inputSchema に無い引数です` になる。**`mcp` と `tool` を除いた残りを引数にする**。
 
 ```jsonc

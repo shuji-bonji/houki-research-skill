@@ -107,7 +107,14 @@ houki-nta-mcp v0.24.x では、`hint` の先頭はどの場面でも `MCP サー
 
 版が新しい DB は、多くの場合、新しい版の houki-nta-mcp で作った DB を古い版の MCP サーバーが開いている（MCP クライアントやプラグインの版が古い）ときに起きる。
 
-キーワードに合わないだけの 0 件は、エラーではなく `results: []` と、検索した件数を書いた `hint` で返る。こちらは「その語を含む文書は無い」という検索結果として扱ってよい。
+キーワードに合わないだけの 0 件は、エラーではない。応答の形はツールで違う。
+
+| ツール | 結果の項目名 | 0 件のときの応答 |
+| --- | --- | --- |
+| 文書系 5 ツール（`nta_search_kaisei_tsutatsu` / `nta_search_jimu_unei` / `nta_search_bunshokaitou` / `nta_search_qa` / `nta_search_tax_answer`） | `results` | `results: []` と、検索した件数を書いた `hint`（`該当なし。DB の<種別> <件数>件に「<keyword>」に合う文書はありません。別のキーワードで試してください`） |
+| `nta_search_tsutatsu` | `hits` | `count: 0`・`hits: []` と `message`（`"<keyword>" にマッチする clause はありません`）。`hint`・`next_actions`・`base_laws_by_tsutatsu` は付かない（`hits` に現れた通達から作るものなので、空なら作れない。SPEC-NTA-SEARCH-TSUTATSU-005・009）。`freshness` と `legal_status` は付く |
+
+どちらも「その語を含む文書は無い」という検索結果として扱ってよい。`nta_search_tsutatsu` で `hint` が無いことを、エラーや DB の不備と取らない（`results` を読もうとして「空」と誤認しない）。ただし、応答に `search_notes` が付いているときは、その文のとおりに語を変えて検索し直してから「無い」と判断する。`search_notes` が付くのは、2 文字の語を本文と題名の部分一致で補ったとき（文に「3 文字未満」と「0 件でも「該当なし」とは限らない」が入る。語を続けて 3 文字以上にして検索し直す）と、通称（`インボイス` など）を辞書の法令名に広げて検索したとき（文に「"<正式名>" を含む文書に広げて検索しました」が入る）である（SPEC-NTA-SEARCH-TSUTATSU-006・008）。3 文字以上の語だけで通称の展開も無ければ `search_notes` は付かない（SPEC-NTA-SEARCH-TSUTATSU-007）。
 
 ### `search_fulltext` の `api-fallback`（houki-egov-mcp。エラーではない）
 
