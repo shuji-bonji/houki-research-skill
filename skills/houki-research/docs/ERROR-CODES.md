@@ -55,7 +55,7 @@ flowchart LR
 
 ## code の一覧
 
-印（○）は、その MCP の正本の code の表に載っていることを表します。正本に載っていても今の版では返さない code があります（下の「正本に載っているが返さない code」）。
+印（○）は、その MCP の正本（`scripts/mcp-refs.config.json` の版）の code の表に載っていることを表します。正本に載っていても今の版では返さない code があります（下の「正本に載っているが返さない code」）。
 
 ### 引数と呼び出しの誤り
 
@@ -104,7 +104,7 @@ flowchart LR
 
 ### 正本に載っているが返さない code
 
-表の版（houki-egov-mcp v0.19.0・houki-nta-mcp v0.24.0）では、該当する code はありません。正本の表にある code は、どれもいずれかのツールが返します。
+`scripts/mcp-refs.config.json` の版（この一覧の印を突き合わせた版）では、該当する code はありません。正本の表にある code は、どれもいずれかのツールが返します。版の数字は `scripts/mcp-refs.config.json` にだけ書き、この文書には書きません。
 
 - houki-egov-mcp は v0.16.0 で、どのツールも返さない code を型から外しました（houki-egov-mcp #57）
 - houki-nta-mcp は v0.24.0 で、国税庁サイトとの通信の失敗を houki-egov-mcp と同じ 4 つの code に分け、`SOURCE_TIMEOUT` と `SOURCE_RATE_LIMITED` も返すようになりました（houki-nta-mcp #120）。v0.23.x までは、この 2 つは正本の表にあってもどのツールも返さず、時間切れも 429 も `SOURCE_API_ERROR` でした

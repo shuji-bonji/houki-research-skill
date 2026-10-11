@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.20.1] - 2026-10-12
+
+**patch リリース** — `docs/ERROR-CODES.md` の版の数字の食い違いを直しただけで、手順も code の一覧も変えていないので、patch にしました（#31）。
+
+### Fixed
+
+- **`docs/ERROR-CODES.md` の「正本に載っているが返さない code」**: 「表の版（houki-egov-mcp v0.19.0・houki-nta-mcp v0.24.0）では」と書いていましたが、突き合わせている版は `scripts/mcp-refs.config.json` の houki-egov-mcp 0.20.0 / houki-nta-mcp 0.27.0 でした。`node scripts/check-mcp-refs.mjs` は code の有無しか見ないので、この文の数字が古くなっても CI では見つかりません。数字を書き直すのではなく、文から版の数字を外して「`scripts/mcp-refs.config.json` の版では」とし、版の数字は `scripts/mcp-refs.config.json` の 1 か所にだけ置くことにしました。「code の一覧」の冒頭の印（○）の説明にも、突き合わせた版が `scripts/mcp-refs.config.json` の版であることを書きました（houki-hub の `docs/reports/2026-10-12-integration-check.md` の Issue 候補 3）
+
+### 確かめたこと
+
+- `node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 261 か所、code 188 か所）。`表の版` で grep し、同じ書き方の文が他の文書に無いことを確かめました
+
 ## [0.20.0] - 2026-10-09
 
 **minor リリース** — houki-nta-mcp 0.27.0（2026-10-09 publish。#154・#155）に追随します。表と説明を直すだけでなく、`SKILL.md` の鉄則 5 の表に、取り込めない通達の `TSUTATSU_NOT_FOUND` で投入を勧めずに通達なしで部分回答する行を足し、LLM の動きを変えるので、minor にしました。
