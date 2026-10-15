@@ -2,7 +2,7 @@
   "$comment": "自動生成（scripts/update-mcp-snapshots.mjs）。手で編集しないでください",
   "server": "pdf-reader",
   "npm": "@shuji-bonji/pdf-reader-mcp",
-  "version": "0.15.5",
+  "version": "0.17.0",
   "tools": [
     {
       "name": "compare_structure",
@@ -69,6 +69,19 @@
       "properties": [
         "file_path",
         "pages",
+        "response_format"
+      ],
+      "required": [
+        "file_path"
+      ],
+      "acceptsUnknownArgs": false
+    },
+    {
+      "name": "inspect_catalog",
+      "properties": [
+        "file_path",
+        "include_xmp",
+        "max_outline_items",
         "response_format"
       ],
       "required": [
@@ -218,31 +231,9 @@
         "file_path"
       ],
       "acceptsUnknownArgs": false
-    },
-    {
-      "name": "validate_metadata",
-      "properties": [
-        "file_path",
-        "response_format"
-      ],
-      "required": [
-        "file_path"
-      ],
-      "acceptsUnknownArgs": false
-    },
-    {
-      "name": "validate_tagged",
-      "properties": [
-        "file_path",
-        "response_format"
-      ],
-      "required": [
-        "file_path"
-      ],
-      "acceptsUnknownArgs": false
     }
   ],
-  "errorCodesSource": "@shuji-bonji/pdf-reader-mcp@0.15.5 の dist/errors.d.ts（LawErrorCode）",
+  "errorCodesSource": "@shuji-bonji/pdf-reader-mcp@0.17.0 の dist/errors.d.ts（LawErrorCode）",
   "errorCodes": [
     "DOC_NOT_FOUND",
     "ENCRYPTED_PDF",

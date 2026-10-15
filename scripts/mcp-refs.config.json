@@ -21,7 +21,7 @@
       "name": "pdf-reader",
       "column": "pdf-reader-mcp",
       "npm": "@shuji-bonji/pdf-reader-mcp",
-      "version": "0.15.5",
+      "version": "0.17.0",
       "repo": "shuji-bonji/pdf-reader-mcp",
       "errorCodes": { "dts": "dist/errors.d.ts", "type": "LawErrorCode" }
     }

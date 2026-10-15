@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **`scripts/mcp-refs.config.json` の版**: pdf-reader-mcp 0.15.5 → 0.17.0。`mcp-snapshots/pdf-reader.json` を作り直しました。ツールは 19 → 18 で、0.17.0 で削除された `validate_tagged`・`validate_metadata` が無くなり、0.16.0 で足された `inspect_catalog` が増えました。code の一覧（10）は変わりません。このスキルの文書はどちらのツールも呼んでいないので、文書の変更はありません
+- `node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 277 か所、code 188 か所）。`node --test 'scripts/test/*.test.mjs'` は 19 件とも通りました
+
 ## [0.21.1] - 2026-10-14
 
 ### Changed
