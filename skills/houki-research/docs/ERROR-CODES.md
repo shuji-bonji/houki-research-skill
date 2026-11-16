@@ -10,9 +10,9 @@
 | --- | --- | --- |
 | houki-egov-mcp | [`specs/current/common_errors/spec.md`](https://github.com/shuji-bonji/houki-egov-mcp/blob/main/specs/current/common_errors/spec.md) の「エラーの code」の表 | 各ツールの `specs/current/<ツール名>/spec.md` |
 | houki-nta-mcp | [`specs/current/common_errors/spec.md`](https://github.com/shuji-bonji/houki-nta-mcp/blob/main/specs/current/common_errors/spec.md) の「エラーの code」の表 | 各ツールの `specs/current/<ツール名>/spec.md` |
-| pdf-reader-mcp | [`src/errors.ts`](https://github.com/shuji-bonji/pdf-reader-mcp/blob/main/src/errors.ts) の型 `LawErrorCode`（specs/ はまだ無い） | README とツールの説明 |
+| pdf-reader-mcp | [`src/errors.ts`](https://github.com/shuji-bonji/pdf-reader-mcp/blob/main/src/errors.ts) の型 `LawErrorCode` | [`openspec/specs/common-errors/spec.md`](https://github.com/shuji-bonji/pdf-reader-mcp/blob/main/openspec/specs/common-errors/spec.md)（v0.19.0 以上）と、各ツールの `openspec/specs/<ツール名>/spec.md` |
 
-エラー応答の形（`error` と `code` は必ず付き、`hint` / `next_actions` / `retryable` / `detail` は値があるときだけ付く）も、houki-egov-mcp と houki-nta-mcp の `common_errors` の spec.md が正本です。
+エラー応答の形（`error` と `code` は必ず付き、`hint` / `next_actions` / `retryable` / `detail` は値があるときだけ付く）も、houki-egov-mcp と houki-nta-mcp の `common_errors` の spec.md が正本です。pdf-reader-mcp の応答の形は、上の `common-errors` の spec.md が正本で、v0.19.0 以上ではどのエラーにも `retryable` が付きます。
 
 ## 一覧と正本を揃える仕組み
 
@@ -92,9 +92,15 @@ flowchart LR
 | code | 意味 | houki-egov-mcp | houki-nta-mcp | pdf-reader-mcp |
 | --- | --- | --- | --- | --- |
 | `INVALID_PDF` | PDF が壊れていて読めない | | | ○ |
-| `ENCRYPTED_PDF` | PDF が暗号化されていてパスワードが要る | | | ○ |
+| `ENCRYPTED_PDF` | PDF が暗号化されていて読めない。pdf-reader-mcp はパスワードを受け取らないので、復号したファイルを渡さない限り読めない（v0.19.0 以上は `retryable: false`） | | | ○ |
 | `UNSUPPORTED_PDF_FEATURE` | pdf-reader-mcp が扱えない PDF の機能（XFA フォームなど）を使っている | | | ○ |
 | `FILE_TOO_LARGE` | ファイルが大きさの上限（50 MB）を超えている（pdf-reader-mcp は PDF、houki-egov-mcp は `get_attachment` / `get_law_file` の `save: true`） | ○ | | ○ |
+
+### PDF を描画する部品が無い
+
+| code | 意味 | houki-egov-mcp | houki-nta-mcp | pdf-reader-mcp |
+| --- | --- | --- | --- | --- |
+| `RENDERER_NOT_AVAILABLE` | `render_page` がページを画像にするための部品（任意の依存パッケージ `@hyzyla/pdfium`）を読み込めない。pdf-reader-mcp v0.19.0 以上で、`retryable: true`（部品を入れてから同じ呼び出しをすれば通る。サーバーの再起動は要らない）。ほかのツールはこの部品を使わないので返さない | | | ○ |
 
 ### サーバー内部の失敗
 
@@ -111,7 +117,7 @@ flowchart LR
 
 ## `retryable` の読み方
 
-再試行してよいかは、code から決めずに応答の `retryable` を見ます。同じ code でも、MCP と場面によって `retryable` が違います（例: `SOURCE_API_ERROR` は、5xx では `retryable: true` だが、429 以外の 4xx（403・400 など）を受けたときは `retryable: false`。houki-nta-mcp は v0.24.0 以上で、v0.23.x までは 4xx でも `retryable: true` だった）。`INTERNAL_ERROR` と `UNKNOWN_TOOL` は、houki-egov-mcp v0.17.0・houki-nta-mcp v0.23.0 以上では、どの場面でも `retryable: false` です（処理中の想定外の例外も、ページの解析の失敗も）。`retryable` が付かない応答の扱いと、再試行の回数は [`ERROR-HANDLING.md`](ERROR-HANDLING.md) に書きます。
+再試行してよいかは、code から決めずに応答の `retryable` を見ます。同じ code でも、MCP と場面によって `retryable` が違います（例: `SOURCE_API_ERROR` は、5xx では `retryable: true` だが、429 以外の 4xx（403・400 など）を受けたときは `retryable: false`。houki-nta-mcp は v0.24.0 以上で、v0.23.x までは 4xx でも `retryable: true` だった）。`INTERNAL_ERROR` と `UNKNOWN_TOOL` は、houki-egov-mcp v0.17.0・houki-nta-mcp v0.23.0 以上では、どの場面でも `retryable: false` です（処理中の想定外の例外も、ページの解析の失敗も）。pdf-reader-mcp は v0.19.0 以上で、`retryable` の値を code ごとに 1 つに決めています（`INVALID_ARGUMENT`・`SOURCE_TIMEOUT`・`SOURCE_UNAVAILABLE`・`RENDERER_NOT_AVAILABLE` が `true`、ほかは `false`）。`retryable` が付かない応答の扱いと、再試行の回数は [`ERROR-HANDLING.md`](ERROR-HANDLING.md) に書きます。
 
 ## code の名前の付け方
 
@@ -119,7 +125,7 @@ MCP に新しい code を足すときに、family で揃えておきたい名前
 
 1. 大文字の英字・数字とアンダースコアで書く（`SCREAMING_SNAKE_CASE`）
 2. MCP の名前を接頭辞にしない。取得元の失敗は、どの MCP でも `SOURCE_*` にする。どの取得元かは `detail.url` で分かる
-3. 種類を表す形を使う: 入力の誤りは `INVALID_*`、無いものは `*_NOT_FOUND`、取得元の失敗は `SOURCE_*`、PDF の中身の問題は `INVALID_*` / `ENCRYPTED_*` / `UNSUPPORTED_*_FEATURE`
+3. 種類を表す形を使う: 入力の誤りは `INVALID_*`、無いものは `*_NOT_FOUND`、取得元の失敗は `SOURCE_*`、PDF の中身の問題は `INVALID_*` / `ENCRYPTED_*` / `UNSUPPORTED_*_FEATURE`、動かすための部品が無いときは `*_NOT_AVAILABLE`
 
 ## 関連
 

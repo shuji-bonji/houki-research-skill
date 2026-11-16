@@ -4,8 +4,10 @@
 
 ### Changed
 
-- **`scripts/mcp-refs.config.json` の版**: pdf-reader-mcp 0.15.5 → 0.17.0。`mcp-snapshots/pdf-reader.json` を作り直しました。ツールは 19 → 18 で、0.17.0 で削除された `validate_tagged`・`validate_metadata` が無くなり、0.16.0 で足された `inspect_catalog` が増えました。code の一覧（10）は変わりません。このスキルの文書はどちらのツールも呼んでいないので、文書の変更はありません
-- `node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 277 か所、code 188 か所）。`node --test 'scripts/test/*.test.mjs'` は 19 件とも通りました
+- **`scripts/mcp-refs.config.json` の版**: pdf-reader-mcp 0.15.5 → 0.23.0。`mcp-snapshots/pdf-reader.json` を作り直しました。ツールは 19 → 18 で、0.17.0 で削除された `validate_tagged`・`validate_metadata` が無くなり、0.16.0 で足された `inspect_catalog` が増えました。0.20.0 で `get_page_count` に引数 `response_format` が増えました。このスキルの文書はどのツールも呼んでいないので、手順の変更はありません
+- **code の一覧に `RENDERER_NOT_AVAILABLE` を足しました**（10 → 11）。pdf-reader-mcp 0.19.0 で増えた code で、`render_page` がページを画像にするための部品（`@hyzyla/pdfium`）を読み込めないときに返ります。週 1 回の MCP drift（2026-11-16、npm の最新版 0.23.0 との突き合わせ）が「`RENDERER_NOT_AVAILABLE` の行がありません」で失敗したことへの対応です。`docs/ERROR-CODES.md` に行を、`docs/ERROR-HANDLING.md` の「コード別の標準対応」に節を足しました
+- **`docs/ERROR-CODES.md` の pdf-reader-mcp の記述を 0.19.0 以上に合わせました**: 「どの場面で返すか」の出どころを `openspec/specs/common-errors/spec.md` に変え、`ENCRYPTED_PDF` の意味から「パスワードが要る」を外し（pdf-reader-mcp はパスワードを受け取らない）、`retryable` が code ごとに 1 つの値で必ず付くことを書きました
+- `node scripts/check-mcp-refs.mjs` は「問題はありません」（文書 13 件、呼び出し例 89 か所、ツール名 277 か所、code 191 か所、ERROR-CODES.md の行 21）。`node --test 'scripts/test/*.test.mjs'` は 19 件とも通りました
 
 ## [0.21.1] - 2026-10-14
 

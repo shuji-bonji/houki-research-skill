@@ -2,7 +2,7 @@
   "$comment": "自動生成（scripts/update-mcp-snapshots.mjs）。手で編集しないでください",
   "server": "pdf-reader",
   "npm": "@shuji-bonji/pdf-reader-mcp",
-  "version": "0.17.0",
+  "version": "0.23.0",
   "tools": [
     {
       "name": "compare_structure",
@@ -57,7 +57,8 @@
     {
       "name": "get_page_count",
       "properties": [
-        "file_path"
+        "file_path",
+        "response_format"
       ],
       "required": [
         "file_path"
@@ -233,7 +234,7 @@
       "acceptsUnknownArgs": false
     }
   ],
-  "errorCodesSource": "@shuji-bonji/pdf-reader-mcp@0.17.0 の dist/errors.d.ts（LawErrorCode）",
+  "errorCodesSource": "@shuji-bonji/pdf-reader-mcp@0.23.0 の dist/errors.d.ts（LawErrorCode）",
   "errorCodes": [
     "DOC_NOT_FOUND",
     "ENCRYPTED_PDF",
@@ -241,6 +242,7 @@
     "INTERNAL_ERROR",
     "INVALID_ARGUMENT",
     "INVALID_PDF",
+    "RENDERER_NOT_AVAILABLE",
     "SOURCE_API_ERROR",
     "SOURCE_TIMEOUT",
     "SOURCE_UNAVAILABLE",
